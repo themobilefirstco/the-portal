@@ -15,6 +15,8 @@ After the last visitor is **confirmed** absent continuously for 15 seconds, the 
 
 Failures are retried with bounded backoff. After three failed opening attempts, repair the issue and use **Retry current visitors**. The retry requires current guests, a verified room browser, fresh Calendar data, and no active or due scheduled call. A prior manual departure is not undone by this button.
 
+For a memorable team address such as `https://meet.example.com/miami`, follow **[Create your branded room URL](branded-room-url.md)**. It includes the redirect files, hosting and DNS steps, and a visitor test.
+
 You can share the Google Meet URL directly. A branded address can use an HTTPS redirect to it; it does not need an embedded Meet page or a Portal server on the internet. The redirect is optional and is not an access-control boundary. Google Meet's own settings govern entry, including forwarded links.
 
 If a meeting URL changes, update it both in Portal and in any redirect. If the underlying meeting space disappears or the code is reassigned, the controller refuses to silently follow a different space.

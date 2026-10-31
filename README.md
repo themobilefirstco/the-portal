@@ -42,9 +42,15 @@ You need a Mac with a signed-in desktop session, Google Chrome, a Google account
 4. In room controls, save the room name, **the Google account's actual sign-in email**, and time zone.
 5. Follow the [Google connection guide](docs/google-setup.md). Create your own Google Cloud project and Desktop OAuth client, import its JSON, and connect the room account. Then sign in to the **separate room Chrome profile** with the same account and click **Check account**.
 6. Select and test your devices in Google Meet. The Portal cannot grant macOS permissions for you. Complete a short invited test call, then choose **Resume auto-join**. New installations are paused by default.
-7. Optional: follow the [drop-in room guide](docs/drop-in.md) and add your dashboard address.
+7. Optional: follow the [drop-in room guide](docs/drop-in.md), [create a branded room URL](docs/branded-room-url.md), and add your dashboard address.
 
 The Google setup is required because this is a forkable application using your own OAuth client. There is no shared public OAuth client or claim that Google has verified this project. Gmail and Workspace accounts have different consent-screen steps; the guide covers both.
+
+## One memorable URL for your team
+
+Give each room an address such as **`https://meet.example.com/miami`**. A teammate opens it and joins Google Meet; The Portal detects the visitor and automatically joins from the Mac mini.
+
+**[Create your branded room URL →](docs/branded-room-url.md)** includes a Vercel redirect template, domain/DNS instructions, team-access guidance and an end-to-end checklist. No public server on the Mac is needed. Google Meet controls who can enter.
 
 ## Help us build the best Portal
 

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/miami",
+      "destination": "https://meet.google.com/REPLACE_WITH_YOUR_MEETING_CODE",
+      "permanent": false
+    },
+    {
+      "source": "/miami/",
+      "destination": "https://meet.google.com/REPLACE_WITH_YOUR_MEETING_CODE",
+      "permanent": false
+    }
+  ]
+}
