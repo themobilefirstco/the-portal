@@ -159,7 +159,16 @@ export class Chrome {
     if (!this.running) return;
     if (this.native) { await this.native.stop(); return; }
     const child = this.child;
+    // Wait for process/pipe closure before callers remove the temporary profile.
+    // Sending Browser.close or SIGTERM only requests shutdown.
+    let timer;
+    const stopped = new Promise(resolve => {
+      const done = () => { clearTimeout(timer); resolve(true); };
+      child.once('close', done);
+      timer = setTimeout(() => { child.removeListener('close', done); resolve(false); }, 15_000);
+    });
     await this.send('Browser.close').catch(() => {});
     if (child.exitCode === null) child.kill('SIGTERM');
+    if (!await stopped) throw new Error('Room Chrome did not finish closing.');
   }
 }

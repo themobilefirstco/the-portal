@@ -16,7 +16,7 @@ The CI workflow runs the full synthetic suite on macOS 15 for Apple Silicon and 
 
 ## Expanded code and security QA
 
-The [October 31 review](qa-review-2026-10-31.md) records the fixes, credential audit, expanded 101-test suite and prioritized remaining risks. Hosted checks cover Apple Silicon and Intel; the live acceptance gates below still apply.
+The [October 31 review](qa-review-2026-10-31.md) records the fixes, credential audit, expanded 102-test suite and prioritized remaining risks. Hosted checks cover Apple Silicon and Intel; the live acceptance gates below still apply.
 
 ## Still required before an unattended production claim
 

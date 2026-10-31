@@ -13,7 +13,7 @@ const ROOM_EMAIL = 'room@example.com';
 
 test('real Chrome pipe, Unicode framing, preview controls and call state', {skip:!findChrome(),timeout:30_000}, async t=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'portal-browser-')),chrome=new Chrome(dir,{headless:true});
-  t.after(async()=>{await chrome.stop();await delay(400);fs.rmSync(dir,{recursive:true,force:true});});
+  t.after(async()=>{await chrome.stop();await delay(400);await fs.promises.rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:100});});
   await chrome.open('about:blank');
   const evaluate=async expression=>(await chrome.send('Runtime.evaluate',{expression,returnByValue:true},chrome.session)).result.value;
   const html=`<button aria-label="Google Account: Portal (${ROOM_EMAIL})">Account</button><button aria-label="Turn off microphone">Mic</button><button aria-label="Turn off camera">Camera</button><button onclick="document.body.dataset.joined='yes'">Join now</button><h1>Portal · café 🌴</h1>`;
@@ -35,7 +35,7 @@ test('real Chrome pipe, Unicode framing, preview controls and call state', {skip
 
 test('calls use new tabs and returning preserves the dashboard and unrelated tabs', {skip:!findChrome(),timeout:30_000}, async t=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'portal-tabs-')), chrome=new Chrome(dir,{headless:true});
-  t.after(async()=>{await chrome.stop();await delay(400);fs.rmSync(dir,{recursive:true,force:true});});
+  t.after(async()=>{await chrome.stop();await delay(400);await fs.promises.rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:100});});
   await chrome.showDisplay('about:blank');
   const dashboard=chrome.displayTarget, session=chrome.displaySession;
   const evaluate=async expression=>(await chrome.send('Runtime.evaluate',{expression,returnByValue:true},session)).result.value;
@@ -86,7 +86,7 @@ test('setup form preserves unsaved fields across status refresh and saves Unicod
   const port=await unusedPort(),agentPort=await unusedPort(),base=`http://127.0.0.1:${port}`;
   const child=spawn(process.execPath,['src/server.mjs'],{env:{...process.env,PORTAL_DATA_DIR:dir,PORTAL_PORT:String(port),PORTAL_AGENT_PORT:String(agentPort),PORTAL_NO_BROWSER:'1',PORTAL_TEST_MODE:'1'},stdio:'ignore'});
   const chrome=new Chrome(path.join(dir,'fixture-browser'),{headless:true});
-  t.after(async()=>{await chrome.stop();child.kill('SIGTERM');await delay(400);fs.rmSync(dir,{recursive:true,force:true});});
+  t.after(async()=>{await chrome.stop();child.kill('SIGTERM');await delay(400);await fs.promises.rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:100});});
   let up=false;for(let i=0;i<50;i++){try{up=(await fetch(base+'/health')).ok;if(up)break;}catch{}await delay(100);}assert.equal(up,true);
   const key=JSON.parse(fs.readFileSync(path.join(dir,'control-key.json'),'utf8'));
   await chrome.open(`${base}/#key=${key}`);
