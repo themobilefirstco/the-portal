@@ -58,6 +58,14 @@ test('calls use new tabs and returning preserves the dashboard and unrelated tab
   assert.equal(await evaluate('document.body.textContent'),'My dashboard');
   assert.equal(await evaluate('location.hash'),'#widgets');
   await chrome.send('Target.closeTarget',{targetId:dashboard});
+  // CDP acknowledges a close request before the target necessarily disappears.
+  let closed=false;
+  for(let i=0;i<50;i++){
+    closed=!(await chrome.send('Target.getTargets')).targetInfos.some(target=>target.targetId===dashboard);
+    if(closed)break;
+    await delay(100);
+  }
+  assert.equal(closed,true,'dashboard target should finish closing');
   await chrome.showDisplay('about:blank');
   assert.notEqual(chrome.displayTarget,dashboard);
   assert.ok((await chrome.send('Target.getTargets')).targetInfos.some(target=>target.targetId===other));
