@@ -1,0 +1,28 @@
+name: Checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  macos:
+    name: macOS ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Ensure Chrome is installed
+        run: |
+          if [ ! -d '/Applications/Google Chrome.app' ]; then
+            brew install --cask google-chrome
+          fi
+      - name: Build pinned runtime and Keychain helper
+        run: bash scripts/bootstrap.sh
+      - name: Check source and documentation
+        run: runtime/node scripts/check.mjs
+      - name: Run full synthetic test suite
+        run: runtime/node scripts/test.mjs
