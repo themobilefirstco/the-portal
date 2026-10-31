@@ -78,7 +78,7 @@ runtime/node scripts/test.mjs --unit
 
 Tests use synthetic accounts, temporary state, and temporary browser profiles. They do not join real meetings. Full browser tests require Chrome; the test runner refuses to silently skip it on macOS. Google OAuth is disabled in the synthetic HTTP-test mode.
 
-See [architecture](docs/architecture.md), [contributing](CONTRIBUTING.md), [security](SECURITY.md), [troubleshooting](docs/troubleshooting.md), and [validation status](docs/validation.md). Runtime downloads and bundled notices are described in [third-party notices](THIRD_PARTY_NOTICES.md).
+See [architecture](docs/architecture.md), [contributing](CONTRIBUTING.md), [security](SECURITY.md), [troubleshooting](docs/troubleshooting.md), and [validation status](docs/validation.md), [code/security review](docs/qa-review-2026-10-31.md). Runtime downloads and bundled notices are described in [third-party notices](THIRD_PARTY_NOTICES.md).
 
 ## Important boundaries
 

@@ -14,6 +14,10 @@ This page separates executed checks from release criteria. Do not treat a succes
 
 The CI workflow runs the full synthetic suite on macOS 15 for Apple Silicon and Intel. A workflow definition is not evidence that its hosted runs have passed; inspect the repository's Actions results for the current commit.
 
+## Expanded code and security QA
+
+The [October 31 review](qa-review-2026-10-31.md) records the fixes, credential audit, expanded 101-test suite and prioritized remaining risks. Hosted checks cover Apple Silicon and Intel; the live acceptance gates below still apply.
+
 ## Still required before an unattended production claim
 
 - A fresh external organization or personal Gmail account following the public guide from start to finish.

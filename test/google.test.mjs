@@ -31,3 +31,26 @@ test('follows Calendar pagination instead of silently dropping invitations',asyn
   const g=new GoogleCalendar(store({'google-client':client.installed,'google-tokens':{email:ROOM_EMAIL,refresh_token:'test',access_token:'test',expires_at:Date.now()+3600_000}}),async(url)=>{urls.push(String(url));return {ok:true,json:async()=>responses.shift()};});
   assert.deepEqual(await g.events(),[{id:1},{id:2}]);assert.ok(urls[1].includes('pageToken=page2'));assert.ok(urls[0].includes('singleEvents=true'));
 });
+
+test('expired OAuth state makes no network request',async()=>{
+  let fetched=false;const g=new GoogleCalendar(store(),async()=>{fetched=true;});
+  g.saveClient(client);g.begin('http://127.0.0.1:4280/oauth/callback');g.pending.expires=0;
+  await assert.rejects(g.complete('code',g.pending.state),/expired/);assert.equal(fetched,false);
+});
+
+test('unverified Google email and missing subject cannot authorize the room',async()=>{
+  for(const who of [{email:ROOM_EMAIL,email_verified:false,sub:'fixture'},{email:ROOM_EMAIL,email_verified:true}]){
+    let calls=0;const g=new GoogleCalendar(store(),async()=>({ok:true,json:async()=>++calls===1?{access_token:'test',refresh_token:'test',expires_in:3600}:who}));
+    g.saveClient(client);g.begin('http://127.0.0.1:4280/oauth/callback');
+    await assert.rejects(g.complete('code',g.pending.state),/Please connect/);assert.equal(g.connected,false);
+  }
+});
+
+test('changing the configured account while OAuth is pending rejects the old authorization',async()=>{
+  const s=store();let calls=0;
+  const g=new GoogleCalendar(s,async()=>({ok:true,json:async()=>++calls===1?{access_token:'test',refresh_token:'test',expires_in:3600}:{email:ROOM_EMAIL,email_verified:true,sub:'fixture'}}));
+  g.saveClient(client);g.begin('http://127.0.0.1:4280/oauth/callback');
+  s.values.settings.roomEmail='other@example.com';
+  await assert.rejects(g.complete('code',g.pending.state),/Please connect/);
+  assert.equal(s.values['google-tokens'],null);assert.equal(g.connected,false);
+});
