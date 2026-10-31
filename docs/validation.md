@@ -12,7 +12,7 @@ This page separates executed checks from release criteria. Do not treat a succes
 
 - A dummy Keychain round-trip attempted over SSH was denied by macOS. Keychain transport fixtures pass, but interactive credential storage must still be verified in a logged-in desktop session.
 
-The CI workflow runs the full synthetic suite on macOS 14 and 15. A workflow definition is not evidence that its hosted runs have passed; inspect the repository's Actions results for the current commit.
+The CI workflow runs the full synthetic suite on macOS 15 for Apple Silicon and Intel. A workflow definition is not evidence that its hosted runs have passed; inspect the repository's Actions results for the current commit.
 
 ## Still required before an unattended production claim
 
