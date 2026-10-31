@@ -1,4 +1,6 @@
 import test from 'node:test';
+import {spawn} from 'node:child_process';
+import net from 'node:net';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -69,4 +71,43 @@ test('calls use new tabs and returning preserves the dashboard and unrelated tab
   await chrome.showDisplay('about:blank');
   assert.notEqual(chrome.displayTarget,dashboard);
   assert.ok((await chrome.send('Target.getTargets')).targetInfos.some(target=>target.targetId===other));
+});
+
+
+async function unusedPort() {
+  const server=net.createServer();
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const port=server.address().port;
+  await new Promise(resolve=>server.close(resolve));return port;
+}
+
+test('setup form preserves unsaved fields across status refresh and saves Unicode settings', {skip:!findChrome(),timeout:30_000}, async t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'portal-onboarding-'));
+  const port=await unusedPort(),agentPort=await unusedPort(),base=`http://127.0.0.1:${port}`;
+  const child=spawn(process.execPath,['src/server.mjs'],{env:{...process.env,PORTAL_DATA_DIR:dir,PORTAL_PORT:String(port),PORTAL_AGENT_PORT:String(agentPort),PORTAL_NO_BROWSER:'1',PORTAL_TEST_MODE:'1'},stdio:'ignore'});
+  const chrome=new Chrome(path.join(dir,'fixture-browser'),{headless:true});
+  t.after(async()=>{await chrome.stop();child.kill('SIGTERM');await delay(400);fs.rmSync(dir,{recursive:true,force:true});});
+  let up=false;for(let i=0;i<50;i++){try{up=(await fetch(base+'/health')).ok;if(up)break;}catch{}await delay(100);}assert.equal(up,true);
+  const key=JSON.parse(fs.readFileSync(path.join(dir,'control-key.json'),'utf8'));
+  await chrome.open(`${base}/#key=${key}`);
+  const evaluate=async expression=>{
+    const r=await chrome.send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true},chrome.session);
+    assert.equal(r.exceptionDetails,undefined,JSON.stringify(r.exceptionDetails));return r.result.value;
+  };
+  for(let i=0;i<50;i++){if(await evaluate('typeof state !== "undefined" && Boolean(state)'))break;await delay(100);}
+  assert.equal(await evaluate('Boolean(state)'),true);
+  const result=await evaluate(`(async()=>{
+    const name=document.getElementById('roomName'), email=document.getElementById('roomEmail');
+    name.value='Café 🌍';name.dispatchEvent(new Event('input',{bubbles:true}));
+    email.focus();await refresh();
+    const preserved=name.value;
+    email.value='new-room@example.com';document.getElementById('timeZone').value='Europe/Paris';
+    await action('room',{roomName:name.value,roomEmail:email.value,timeZone:'Europe/Paris'},'roomForm');
+    const saved=state.settings.roomName;
+    name.value='';name.dispatchEvent(new Event('input',{bubbles:true}));
+    await action('room',{roomName:'',roomEmail:email.value,timeZone:'Europe/Paris'},'roomForm');
+    email.focus();await refresh();
+    return {preserved,saved,invalidPreserved:name.value,dirty:dirtyForms.has('roomForm'),paused:state.settings.paused,hash:location.hash};
+  })()`);
+  assert.deepEqual(result,{preserved:'Café 🌍',saved:'Café 🌍',invalidPreserved:'',dirty:true,paused:true,hash:''});
 });

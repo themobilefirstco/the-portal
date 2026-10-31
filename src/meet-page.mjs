@@ -65,7 +65,7 @@ export function inspectMeet({email, act = false, verified = false, allowMissingD
     const tracks = video.srcObject?.getVideoTracks?.() || [];
     return tracks.some(track => track.readyState === 'live' && track.enabled && !track.muted);
   });
-  if (/Camera is starting|Starting (?:your )?camera/i.test(body) || !cameraReady) return {state: 'devices-starting', media, cameraReady: false, message: 'Waiting for a live your room devices camera image before joining. Device buttons alone do not confirm the camera has started.'};
+  if (/Camera is starting|Starting (?:your )?camera/i.test(body) || !cameraReady) return {state: 'devices-starting', media, cameraReady: false, message: 'Waiting for a live room camera image before joining. Device buttons alone do not confirm the camera has started.'};
   if (act) { join.click(); return {state: 'joining'}; }
   return {state: 'ready', verified: true};
 }

@@ -49,3 +49,14 @@ test('manual retry permits an ongoing missed invitation but rejects stale, cance
 });
 
 function normalizeForRoom(items, email = ROOM_EMAIL) { return normalizeEvents(items, email); }
+
+
+test('a known Calendar failure blocks new joins without losing active-call deadlines', () => {
+  const now=100_000,event={id:'fixture',url:'https://meet.google.com/abc-defg-hij',start:now-1000,end:now+1000};
+  const context={now,events:[event],lastSync:now-100,paused:false,active:null,syncError:'offline'};
+  assert.equal(decide(context).type,'idle');
+  assert.equal(decide({...context,syncError:''}).type,'start');
+  assert.equal(decide({...context,active:event,events:[]}).type,'hold');
+  assert.equal(decide({...context,now:now+2000,active:event}).type,'finish');
+  assert.equal(decide({...context,syncError:'',lastSync:now+1000}).type,'idle');
+});

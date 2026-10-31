@@ -21,7 +21,12 @@ export class GoogleCalendar {
   get email() { return this.settings().roomEmail || ''; }
   get connected() { return Boolean(this.tokens?.refresh_token && this.tokens.email === this.email); }
   get meetConnected() { return this.connected && (this.tokens.scope || '').split(/\s+/).includes(MEET_SCOPE); }
-  saveClient(input) { this.generation++; this.pending = null; this.client = validateClient(input); this.secrets.write('google-client', this.client); this.tokens = null; this.secrets.write('google-tokens', null); }
+  saveClient(input) {
+    const client = validateClient(input);
+    this.generation++; this.pending = null;
+    this.secrets.write('google-tokens', null); this.tokens = null;
+    this.secrets.write('google-client', client); this.client = client;
+  }
   begin(redirect, {meet = false} = {}) {
     if (!this.email) throw new Error('Save the room Google email first.');
     if (!this.client) throw new Error('Import the Desktop app JSON first.');
@@ -52,8 +57,8 @@ export class GoogleCalendar {
     const who = await this.json('https://openidconnect.googleapis.com/v1/userinfo', {headers: {Authorization: `Bearer ${result.access_token}`}});
     if (p.generation !== this.generation || p.email !== this.email || who.email?.toLowerCase() !== this.email || !who.email_verified || !who.sub) throw new Error(`Please connect ${this.email}, not another Google account.`);
     if (!result.refresh_token) throw new Error('Google did not provide ongoing access. Reconnect Calendar and grant access.');
-    this.tokens = {...result, email: who.email.toLowerCase(), sub: who.sub, expires_at: Date.now() + result.expires_in * 1000};
-    this.secrets.write('google-tokens', this.tokens);
+    const tokens = {...result, email: who.email.toLowerCase(), sub: who.sub, expires_at: Date.now() + result.expires_in * 1000};
+    this.secrets.write('google-tokens', tokens); this.tokens = tokens;
   }
   async accessToken() {
     if (!this.connected) throw new Error('Connect the room Calendar to continue.');
@@ -66,8 +71,8 @@ export class GoogleCalendar {
     const generation = this.generation;
     const result = await this.token({refresh_token: this.tokens.refresh_token, grant_type: 'refresh_token'});
     if (generation !== this.generation) throw new Error('Google connection changed during token refresh.');
-    this.tokens = {...this.tokens, ...result, expires_at: Date.now() + result.expires_in * 1000};
-    this.secrets.write('google-tokens', this.tokens);
+    const tokens = {...this.tokens, ...result, expires_at: Date.now() + result.expires_in * 1000};
+    this.secrets.write('google-tokens', tokens); this.tokens = tokens;
     return this.tokens.access_token;
   }
   async disconnect() {

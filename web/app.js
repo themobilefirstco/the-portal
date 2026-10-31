@@ -3,6 +3,8 @@ const params = new URLSearchParams(location.hash.slice(1));
 if (params.has('key')) { sessionStorage.setItem('portal-key', params.get('key')); history.replaceState(null, '', '/'); }
 const key = sessionStorage.getItem('portal-key');
 let state, busy = false;
+const dirtyForms = new Set();
+for (const id of ['roomForm','dashboardForm','departureForm']) $(id).addEventListener('input', () => dirtyForms.add(id));
 const testWithoutDevices = new Set();
 const time = ms => new Intl.DateTimeFormat('en-US', {hour: 'numeric', minute: '2-digit', timeZone: state?.settings.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone}).format(ms);
 const dateTime = ms => new Intl.DateTimeFormat('en-US', {weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: state?.settings.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone}).format(ms);
@@ -16,7 +18,7 @@ async function api(path, body) {
 function render(s) {
   state = s;
   document.querySelectorAll('.room-email').forEach(e => e.textContent = s.email || 'your Google account');
-  for (const name of ['roomName', 'roomEmail', 'timeZone']) if (document.activeElement !== $(name)) $(name).value = s.settings[name] || '';
+  for (const name of ['roomName', 'roomEmail', 'timeZone']) if (!dirtyForms.has('roomForm') && document.activeElement !== $(name)) $(name).value = s.settings[name] || '';
   $('disconnect').disabled = !s.calendar.connected || Boolean(s.active);
 
   $('calendarState').textContent = s.calendar.error ? 'Needs attention' : s.calendar.connected ? 'Connected' : 'Not connected';
@@ -51,9 +53,9 @@ function render(s) {
   }
   const departureSupported = Number.isInteger(s.settings.aloneLeaveSeconds);
   $('saveDeparture').disabled = !departureSupported;
-  if (document.activeElement !== $('aloneLeaveSeconds')) $('aloneLeaveSeconds').value = String(s.settings.aloneLeaveSeconds ?? 60);
+  if (!dirtyForms.has('departureForm') && document.activeElement !== $('aloneLeaveSeconds')) $('aloneLeaveSeconds').value = String(s.settings.aloneLeaveSeconds ?? 60);
   $('departureDetail').textContent = !departureSupported ? 'Run setup.command once to activate this update.' : s.settings.aloneLeaveSeconds ? `Scheduled meetings leave after ${s.settings.aloneLeaveSeconds} seconds alone, once another participant has been seen. Someone returning cancels the countdown. The scheduled end still applies.` : 'Leaving scheduled meetings when alone is off. The scheduled end still applies.';
-  if (document.activeElement !== $('dashboard')) $('dashboard').value = s.settings.dashboard;
+  if (!dirtyForms.has('dashboardForm') && document.activeElement !== $('dashboard')) $('dashboard').value = s.settings.dashboard;
   const dropInSupported = typeof s.settings.dropInEnabled === 'boolean';
   $('saveDropIn').disabled = !dropInSupported;
   $('connectMeet').disabled = !dropInSupported || !s.calendar.hasClient;
@@ -84,14 +86,14 @@ function render(s) {
   for (const item of s.activity.slice(0, 6)) { const p = document.createElement('p'); const t = document.createElement('span'); t.textContent = time(item.at); p.append(t, document.createTextNode(item.text)); $('activity').append(p); }
   if (!s.activity.length) { const p = document.createElement('p'); p.className = 'empty'; p.textContent = 'Waiting for your first connection.'; $('activity').append(p); }
 }
-async function action(name, body = {}) {
+async function action(name, body = {}, form) {
   if (busy) return;
   busy = true;
-  try { const s = await api(name, body); render(s); $('toast').hidden = true; }
+  try { const s = await api(name, body); if (form) dirtyForms.delete(form); render(s); $('toast').hidden = true; }
   catch (e) { toast(e.message, true); }
   finally { busy = false; }
 }
-$('roomForm').onsubmit = event => { event.preventDefault(); action('room', {roomName: $('roomName').value, roomEmail: $('roomEmail').value, timeZone: $('timeZone').value}); };
+$('roomForm').onsubmit = event => { event.preventDefault(); action('room', {roomName: $('roomName').value, roomEmail: $('roomEmail').value, timeZone: $('timeZone').value}, 'roomForm'); };
 $('disconnect').onclick = () => action('disconnect');
 $('pause').onclick = () => action('settings', {paused: !state?.settings.paused});
 $('refresh').onclick = () => action('sync');
@@ -114,8 +116,8 @@ async function copyAgentToken(rotate = false) {
 }
 $('agentCopy').onclick = () => copyAgentToken();
 $('agentRotate').onclick = () => copyAgentToken(true);
-$('dashboardForm').onsubmit = event => { event.preventDefault(); action('settings', {dashboard: $('dashboard').value.trim()}); };
-$('departureForm').onsubmit = event => { event.preventDefault(); action('settings', {aloneLeaveSeconds: Number($('aloneLeaveSeconds').value)}); };
+$('dashboardForm').onsubmit = event => { event.preventDefault(); action('settings', {dashboard: $('dashboard').value.trim()}, 'dashboardForm'); };
+$('departureForm').onsubmit = event => { event.preventDefault(); action('settings', {aloneLeaveSeconds: Number($('aloneLeaveSeconds').value)}, 'departureForm'); };
 let dropInDirty = false;
 $('dropInForm').oninput = () => { dropInDirty = true; };
 $('dropInForm').onsubmit = async event => {

@@ -20,7 +20,11 @@ export async function deploy({source, destination, stop, start, verify, entries}
     await start(); await verify();
     if (moved) fs.rmSync(previous, {recursive: true, force: true});
   } catch (error) {
-    if (installed) { await stop().catch(() => {}); fs.rmSync(destination, {recursive: true, force: true}); }
+    if (installed) {
+      try { await stop(); }
+      catch { throw new Error(`Update failed and the new service could not stop. Application files and any previous backup were preserved in ${parent}. Stop the service before recovery. Original error: ${error.message}`); }
+      fs.rmSync(destination, {recursive: true, force: true});
+    }
     if (moved) {
       fs.renameSync(previous, destination);
       try { await start(); } catch { throw new Error(`Update failed; previous files restored but startup failed. Run setup again. Original error: ${error.message}`); }

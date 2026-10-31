@@ -2,6 +2,12 @@
 
 Turn a Mac mini, a TV, and a camera into a Google Meet room.
 
+![Illustrated Portal workflow: ready dashboard, visitor joins, Google Meet call, return to dashboard](docs/assets/portal-workflow.gif)
+
+*An illustration of the workflow, not a live recording. See [what we have tested](docs/validation.md).*
+
+[Get started](#set-up-your-own-room) · [Help build it](#help-us-build-the-best-portal) · [Contribution guide](CONTRIBUTING.md) · [Roadmap](docs/roadmap.md)
+
 The Portal displays your dashboard between calls, joins Google Meet invitations sent to the room's Google account, and can open a dedicated drop-in meeting when someone joins. When the call ends, it returns to the same dashboard tab.
 
 **Google Meet and Google accounts only.** No Gmail inbox access, Zoom, Teams, recording, transcription, or hosted account is required. Use an existing Google account with Calendar and Meet access; The Portal does not create an email account.
@@ -39,6 +45,19 @@ You need a Mac with a signed-in desktop session, Google Chrome, a Google account
 7. Optional: follow the [drop-in room guide](docs/drop-in.md) and add your dashboard address.
 
 The Google setup is required because this is a forkable application using your own OAuth client. There is no shared public OAuth client or claim that Google has verified this project. Gmail and Workspace accounts have different consent-screen steps; the guide covers both.
+
+## Help us build the best Portal
+
+Meeting rooms should be easy to join and easy to trust. Help us make The Portal the most reliable, welcoming open-source Google Meet room for a Mac mini.
+
+**Your first PR does not need to be big.** Fix a confusing setup step. Reproduce a browser failure with a synthetic test. Improve recovery after a network outage. Every contribution that makes the next room easier to set up matters.
+
+- **Have a Mac mini?** Follow the guide and [report your setup results](https://github.com/themobilefirstco/the-portal/issues/new?template=setup-report.yml). A documented failure is useful too.
+- **Write code?** Pick a task from the [roadmap](docs/roadmap.md), fork the project, and open a draft PR. Include the problem, the fix and how you tested it.
+- **Care about a great Mac experience?** Help define accessible onboarding and recovery flows. The native app comes after the engine and setup are dependable.
+- **Know someone building meeting rooms?** Share the project. Star it if you want to help others discover it, and watch releases for future updates.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for a safe development setup. Keep PRs focused; open an issue before a large change. Never include real credentials, meeting links, attendee details or browser profiles. We welcome first-time contributors, documentation improvements and candid bug reports.
 
 ## Everyday use
 

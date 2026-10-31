@@ -18,6 +18,8 @@ for (const file of files) {
     const r = spawnSync(process.execPath, ['--check', file], {encoding: 'utf8'});
     if (r.status !== 0) problems.push(`Syntax: ${file}\n${r.stderr}`);
   }
+  // Binary assets are reviewed visually; don't decode GIF bytes as source text.
+  if (/\.(gif|png|jpg|jpeg|webp)$/i.test(file)) continue;
   const text = fs.readFileSync(file, 'utf8');
   const patterns = [/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/, /AIza[0-9A-Za-z_-]{30,}/, /GOCSPX-[0-9A-Za-z_-]{15,}/, /1\/\/[0-9A-Za-z_-]{30,}/, /gh[pousr]_[0-9A-Za-z]{20,}/];
   if (patterns.some(p => p.test(text))) problems.push(`Potential credential: ${file}`);

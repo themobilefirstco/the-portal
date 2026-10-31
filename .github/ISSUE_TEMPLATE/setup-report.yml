@@ -1,0 +1,41 @@
+name: Setup or bug report
+description: Help the next person get their room working.
+title: "[Setup] "
+body:
+  - type: markdown
+    attributes:
+      value: "Thank you for testing The Portal. Do not include credentials, account emails, real meeting links, attendee names, private logs or browser profiles. Report vulnerabilities privately using SECURITY.md."
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Mac model/chip, macOS version, Chrome version and Portal commit.
+    validations:
+      required: true
+  - type: dropdown
+    id: account
+    attributes:
+      label: Google account type
+      options:
+        - Personal Google account
+        - Google Workspace account
+        - No Google account connected yet
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps and expected result
+      description: Which guide step or action triggered the issue? What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Describe the failure or success. Remove private information from any excerpt.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: What would make this easier?
+      description: Wording improvements, a proposed fix or a link to your draft PR are welcome.

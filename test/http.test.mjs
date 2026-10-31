@@ -1,4 +1,5 @@
 import test from 'node:test';
+import http from 'node:http';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -23,6 +24,14 @@ test('local API protects credentials, rejects cross-site writes, and persists pa
   assert.equal(configured.email,'new-room@example.com');
   assert.equal(configured.settings.timeZone,'Europe/Paris');
   assert.equal(configured.settings.paused,true);
+  for(const body of ['null','[]','"text"','{']) {
+    assert.equal((await fetch(`${base}/api/settings`,{method:'POST',headers,body})).status,400);
+  }
+  assert.equal((await fetch(`${base}/api/settings`,{method:'POST',headers,body:JSON.stringify({dashboard:'x'.repeat(100001)})})).status,413);
+  assert.equal((await fetch(`${base}/api/settings`,{method:'POST',headers:{...headers,'Content-Type':'application/json-fake'},body:'{}'})).status,405);
+  const reboundStatus=await new Promise((resolve,reject)=>{const r=http.get(`${base}/api/status`,{headers:{...headers,Host:'evil.example'}},res=>{res.resume();resolve(res.statusCode);});r.on('error',reject);});
+  assert.equal(reboundStatus,403);
+  assert.equal((await fetch(`${base}/api/connect`,{method:'POST',headers,body:'{}'})).status,400);
   const attack=await fetch(`${base}/api/settings`,{method:'POST',headers:{...headers,Origin:'https://evil.example'},body:'{"paused":true}'});assert.equal(attack.status,403);
   const response=await fetch(`${base}/api/settings`,{method:'POST',headers,body:'{"paused":true}'});const s=await response.json();assert.equal(response.status,200,JSON.stringify(s));assert.equal(s.settings.paused,true);assert.equal(s.camera,'on');assert.equal(s.microphone,'on');
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'settings.json'),'utf8')).paused,true);

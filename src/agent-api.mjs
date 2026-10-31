@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {readJsonObject} from './http-body.mjs';
 import crypto from 'node:crypto';
 import {meetUrl} from './schedule.mjs';
 
@@ -95,12 +96,7 @@ const sameToken = (given, token) => {
 };
 async function bodyJSON(req) {
   if (!/^application\/json(?:;|$)/i.test(req.headers['content-type'] || '')) throw new AgentError(415, 'Use Content-Type: application/json.');
-  let text = '';
-  for await (const part of req) {
-    text += part;
-    if (Buffer.byteLength(text) > 4096) throw new AgentError(413, 'Request body exceeds 4 KB.');
-  }
-  try { return JSON.parse(text); } catch { throw new AgentError(400, 'Invalid JSON.'); }
+  return readJsonObject(req, 4096);
 }
 
 export function createAgentServer({getConfig, getStatus, requests, exclusive, join, leave}) {

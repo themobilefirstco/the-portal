@@ -35,7 +35,7 @@ test('missing dashboard and failed guest monitoring cannot be healthy', () => {
 test('slow polling permits independent commands and publishes only a complete result', async () => {
   let resolve, snapshot=null, calls=0;
   const poller=new SnapshotPoller({read:()=>{calls++;return new Promise(r=>resolve=r);},publish:x=>snapshot=x,failed:()=>assert.fail()});
-  const pending=poller.refresh();poller.refresh();assert.equal(calls,1);
+  const pending=poller.refresh();poller.refresh();await Promise.resolve();assert.equal(calls,1);
   let left=false;await Promise.resolve().then(()=>left=true);assert.equal(left,true);assert.equal(snapshot,null);
   resolve(['complete']);await pending;assert.deepEqual(snapshot,['complete']);
 });
@@ -43,7 +43,7 @@ test('slow polling permits independent commands and publishes only a complete re
 test('disconnect invalidation prevents an old Calendar response from repopulating events', async () => {
   let resolve, published=false;
   const poller=new SnapshotPoller({read:()=>new Promise(r=>resolve=r),publish:()=>published=true,failed:()=>assert.fail()});
-  const pending=poller.refresh();poller.invalidate();resolve(['old-account']);await pending;assert.equal(published,false);
+  const pending=poller.refresh();await Promise.resolve();poller.invalidate();resolve(['old-account']);await pending;assert.equal(published,false);
 });
 
 test('polling failures are reported and rate-limited without replacing the previous snapshot', async () => {
@@ -87,4 +87,48 @@ test('Google authorization is bound to the configured account and uses the suppl
   g.saveClient({installed:{client_id:'fixture.apps.googleusercontent.com',client_secret:'fixture'}});
   g.begin('http://127.0.0.1:4280/oauth/callback');await g.complete('fixture',g.pending.state);
   assert.equal(g.connected,true);assert.equal(values.get('google-tokens').email,config.roomEmail);
+});
+
+
+test('a synchronous polling failure releases the lock and permits recovery', async () => {
+  let attempts=0, published;
+  const p=new SnapshotPoller({read:()=>{if(++attempts===1)throw Error('offline');return 'recovered';},publish:x=>published=x,failed:()=>{}});
+  await p.refresh();assert.equal(p.busy,null);
+  await p.refresh({force:true});assert.equal(published,'recovered');assert.equal(attempts,2);
+});
+
+
+test('failed rollback stop preserves both live files and the previous backup', async t => {
+  const f=fixture(t);let stops=0;
+  await assert.rejects(deploy({...f,entries:['version'],stop:async()=>{if(++stops===2)throw Error('still running');},start:async()=>{},verify:async()=>{throw Error('unhealthy');}}),/could not stop/);
+  assert.equal(fs.readFileSync(path.join(f.destination,'version'),'utf8'),'new');
+  const backup=fs.readdirSync(f.root).find(x=>x.startsWith('.previous'));
+  assert.equal(fs.readFileSync(path.join(f.root,backup,'version'),'utf8'),'old');
+});
+
+test('failed Keychain persistence cannot report a successful Google connection', async () => {
+  const values=new Map(),config={roomEmail:'room@example.com'};
+  const secrets={read:k=>values.get(k),write:(k,v)=>{if(k==='google-tokens'&&v)throw Error('Keychain locked');values.set(k,v);}};
+  let calls=0;
+  const g=new GoogleCalendar({read:()=>config},async()=>({ok:true,json:async()=>++calls===1?{access_token:'fixture',refresh_token:'fixture',expires_in:3600}:{email:config.roomEmail,email_verified:true,sub:'fixture'}}),{secrets,settings:()=>config});
+  g.saveClient({installed:{client_id:'fixture.apps.googleusercontent.com',client_secret:'fixture'}});
+  g.begin('http://127.0.0.1:4280/oauth/callback');
+  await assert.rejects(g.complete('fixture',g.pending.state),/Keychain locked/);
+  assert.equal(g.connected,false);assert.equal(values.get('google-tokens'),null);
+});
+
+test('disconnect prevents an in-flight refresh from resurrecting Google tokens', async () => {
+  const values=new Map([['google-client',{client_id:'fixture.apps.googleusercontent.com',client_secret:'fixture'}],['google-tokens',{email:'room@example.com',refresh_token:'fixture',expires_at:0}]]);
+  const secrets={read:k=>values.get(k),write:(k,v)=>values.set(k,v)};
+  let resolve, refreshes=0;
+  const g=new GoogleCalendar({read:()=>({roomEmail:'room@example.com'})},async url=>{
+    if(url.includes('/revoke'))return {ok:true};
+    refreshes++;return new Promise(r=>resolve=r);
+  },{secrets});
+  const pending=g.accessToken(), shared=g.accessToken();
+  const rejected=assert.rejects(pending,/connection changed/), alsoRejected=assert.rejects(shared,/connection changed/);
+  assert.equal(refreshes,1);await g.disconnect();
+  resolve({ok:true,json:async()=>({access_token:'fixture-new',expires_in:3600})});
+  await Promise.all([rejected,alsoRejected]);
+  assert.equal(g.connected,false);assert.equal(values.get('google-tokens'),null);
 });

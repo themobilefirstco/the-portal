@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {readJsonObject} from './http-body.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -38,7 +39,7 @@ const agentRequests = new AgentRequests(store);
 let agentConfig = secrets.read('agent-access', {enabled: false, token: null});
 const startedAt = Date.now(); let lastTickAt = 0;
 const chrome = new Chrome(path.join(dataDir, 'Chrome'), {profileDirectory: settings.chromeProfile || 'Default', email: () => settings.roomEmail});
-let history = store.read('history', {}), active = null, events = [], lastSync = 0, syncError = '', browserError = '', message = 'Connect the room Calendar to begin.', syncBusy = false, tickBusy = false, nextSync = 0, nextBrowserAttempt = 0, stopping = false;
+let history = store.read('history', {}), active = null, events = [], lastSync = 0, syncError = '', browserError = '', message = 'Connect the room Calendar to begin.', tickBusy = false, nextBrowserAttempt = 0, stopping = false;
 const activity = store.read('activity', []).slice(0, 200);
 const note = text => { message = text; activity.unshift({at: Date.now(), text}); activity.splice(200); store.write('activity', activity); };
 const persist = () => store.write('settings', settings);
@@ -107,7 +108,7 @@ async function start(event, {allowMissingDevices = false} = {}) {
   history[event.id] = {...h, attempts: (h.attempts || 0) + 1, updated: Date.now()}; saveHistory();
   active = {...event, end: event.source === 'drop-in' ? null : event.end + (h.extension || 0), extension: h.extension || 0, phase: 'opening', opened: Date.now(), wasInCall: false, allowMissingDevices, ...(event.source === 'drop-in' ? {attendance: {sawOthers: true}} : {})};
   if (event.source === 'drop-in') chime();
-  note(event.source === 'drop-in' ? 'Someone joined the The room room. Opening the call.' : event.source === 'agent' ? `Agent requested ${event.title}. Opening the call.` : `Opening ${event.title}.`);
+  note(event.source === 'drop-in' ? 'Someone joined the room. Opening the call.' : event.source === 'agent' ? `Agent requested ${event.title}. Opening the call.` : `Opening ${event.title}.`);
   try {
     await chrome.showDisplay(home(), {front: false});
     await chrome.open(`${event.url}?authuser=${encodeURIComponent(settings.roomEmail)}&hl=en`);
@@ -132,7 +133,7 @@ async function tick() {
       const updated = events.find(e => e.id === active.id);
       if (updated) active.end = updated.end + (active.extension || 0);
     }
-    const action = decide({now: Date.now(), events: scheduledEvents(), lastSync, paused: settings.paused || !settings.browserVerified, active, history});
+    const action = decide({now: Date.now(), events: scheduledEvents(), lastSync, syncError, paused: settings.paused || !settings.browserVerified, active, history});
     if (action.type === 'finish') { await finish(action.reason, active?.source !== 'drop-in'); return; }
     if (action.type === 'start') { await start(action.event); return; }
     if (active) {
@@ -162,7 +163,7 @@ async function tick() {
       active.captureStartup = trackCaptureStartup(active.captureStartup, {now: Date.now(), state: result.state, wasInCall: active.wasInCall});
       if (active.captureStartup.restart) {
         // Recover the call tab without closing the dashboard or other tabs.
-        note('your room devices camera has not started. Reopening the meeting tab once before joining.');
+        note('The room camera has not started. Reopening the meeting tab once before joining.');
         await chrome.leave();
         await chrome.open(`${active.url}?authuser=${encodeURIComponent(settings.roomEmail)}&hl=en`);
         active.phase = 'loading'; active.opened = Date.now();
@@ -203,7 +204,7 @@ async function tick() {
       }
       if (active && result.state !== 'in-call') active.attendance = trackAttendance(active.attendance, {now: Date.now(), count: null, inCall: false});
     } else {
-      const visitor = dropInEvent({now: Date.now(), snapshot: dropInSnapshot, enabled: settings.dropInEnabled, paused: settings.paused, verified: settings.browserVerified, calendarFresh: lastSync > 0 && Date.now() - lastSync <= 90_000, active, history});
+      const visitor = dropInEvent({now: Date.now(), snapshot: dropInSnapshot, enabled: settings.dropInEnabled, paused: settings.paused, verified: settings.browserVerified, calendarFresh: !syncError && lastSync > 0 && Date.now() - lastSync <= 90_000, active, history});
       if (visitor) { await start(visitor); return; }
       if ((!chrome.running || !chrome.displayTarget) && Date.now() >= nextBrowserAttempt && !process.env.PORTAL_NO_BROWSER) {
       nextBrowserAttempt = Date.now() + 60_000;
@@ -216,7 +217,7 @@ async function tick() {
 }
 
 const publicState = () => ({name: settings.roomName, timeZone: settings.timeZone, connected: health().healthy, paused: settings.paused, attention: !health().healthy, active: Boolean(active)});
-const status = () => ({name: settings.roomName, email: settings.roomEmail, settings, agent: {enabled: agentConfig.enabled, hasToken: Boolean(agentConfig.token), port: agentPort}, camera: 'on', microphone: 'on', calendar: {hasClient: Boolean(google.client), connected: google.connected, lastSync, error: syncError}, browser: {installed: Boolean(findChrome()), running: chrome.running, verified: settings.browserVerified, error: browserError, dashboardOpen: Boolean(chrome.displayTarget), meetingTabOpen: Boolean(chrome.target)}, dropIn: {connected: google.meetConnected && Boolean(google.tokens?.sub), ...dropInSnapshot, leaveAfterSeconds: DROP_IN_LEAVE_SECONDS}, active, events: scheduledEvents().filter(e => e.end > Date.now()), activity, message, fresh: lastSync > 0 && Date.now()-lastSync <= 90_000});
+const status = () => ({name: settings.roomName, email: settings.roomEmail, settings, agent: {enabled: agentConfig.enabled, hasToken: Boolean(agentConfig.token), port: agentPort}, camera: 'on', microphone: 'on', calendar: {hasClient: Boolean(google.client), connected: google.connected, lastSync, error: syncError}, browser: {installed: Boolean(findChrome()), running: chrome.running, verified: settings.browserVerified, error: browserError, dashboardOpen: Boolean(chrome.displayTarget), meetingTabOpen: Boolean(chrome.target)}, dropIn: {connected: google.meetConnected && Boolean(google.tokens?.sub), ...dropInSnapshot, leaveAfterSeconds: DROP_IN_LEAVE_SECONDS}, active, events: scheduledEvents().filter(e => e.end > Date.now()), activity, message, fresh: !syncError && lastSync > 0 && Date.now()-lastSync <= 90_000});
 const health = () => roomHealth(status(), {lastTickAt, startedAt});
 const agentServer = createAgentServer({
   getConfig: () => agentConfig, getStatus: () => agentStatus(status(), health()), requests: agentRequests, exclusive,
@@ -224,7 +225,7 @@ const agentServer = createAgentServer({
     if (settings.paused) throw new AgentError(409, 'Joining is paused in local room controls.');
     if (active) throw new AgentError(409, 'A call is already active. Leave its exact callId first.');
     if (!settings.browserVerified) throw new AgentError(409, 'Room browser sign-in must be verified locally.');
-    if (decide({now: Date.now(), events: scheduledEvents(), lastSync, paused: false, active: null, history}).type === 'start') throw new AgentError(409, 'A scheduled meeting is due and has priority.');
+    if (decide({now: Date.now(), events: scheduledEvents(), lastSync, syncError, paused: false, active: null, history}).type === 'start') throw new AgentError(409, 'A scheduled meeting is due and has priority.');
     const now = Date.now(), id = `agent:${crypto.randomUUID()}`;
     await start({id, source: 'agent', title: body.title, url: body.url, start: now, end: now + body.durationMinutes * 60_000});
     if (active?.id !== id) throw new AgentError(503, browserError || 'The room browser could not open the meeting.');
@@ -238,14 +239,6 @@ const agentServer = createAgentServer({
   },
 });
 
-async function readBody(req) {
-  let text = '';
-  for await (const part of req) {
-    text += part;
-    if (Buffer.byteLength(text) > 100_000) throw new Error('This file is too large. Choose the small OAuth client JSON.');
-  }
-  return text ? JSON.parse(text) : {};
-}
 const sameKey = value => {
   const a = Buffer.from(value || ''), b = Buffer.from(secret);
   return a.length === b.length && crypto.timingSafeEqual(a,b);
@@ -279,8 +272,8 @@ const server = http.createServer(async (req, res) => {
     if (u.pathname.startsWith('/api/')) {
       if (!sameKey(req.headers['x-room-token'])) return reply(res, 401, {error: 'Open the controller using Open Portal.command.'});
       if (u.pathname === '/api/status' && req.method === 'GET') return reply(res, 200, {...status(), health: health()});
-      if (req.method !== 'POST' || !req.headers['content-type']?.startsWith('application/json')) return reply(res, 405, {error: 'Use a JSON POST.'});
-      const body = await readBody(req);
+      if (req.method !== 'POST' || !/^application\/json(?:;|$)/i.test(req.headers['content-type'] || '')) return reply(res, 405, {error: 'Use a JSON POST.'});
+      const body = await readJsonObject(req);
       return await exclusive(async () => {
       switch (u.pathname) {
         case '/api/agent-access':
@@ -302,7 +295,8 @@ const server = http.createServer(async (req, res) => {
             await chrome.stop();
             settings.browserVerified = false; settings.paused = true; google.pending = null;
             settings.dropInEnabled = false; settings.dropInUrl = ''; settings.dropInSpace = '';
-            events = []; lastSync = 0; calendarPoller.invalidate();
+            events = []; lastSync = 0; syncError = ''; calendarPoller.invalidate();
+            dropInGeneration++; dropInSnapshot = null; dropInNextCheck = 0; dropInFailures = 0;
           }
           Object.assign(settings, config); persist(); note('Room saved. Connect this Google account next.'); break;
         }
@@ -340,7 +334,7 @@ const server = http.createServer(async (req, res) => {
           if (active) throw new Error('A meeting is already active.');
           if (!settings.dropInEnabled || settings.paused || !settings.browserVerified) throw new Error('Enable automatic drop-in joining and verify the room browser before retrying.');
           if (calendarPoller.busy) throw new Error('Calendar is refreshing. Retry shortly.');
-          if (decide({now: Date.now(), events: scheduledEvents(), lastSync, paused: false, active, history}).type === 'start') throw new Error('A scheduled meeting is due and takes priority.');
+          if (decide({now: Date.now(), events: scheduledEvents(), lastSync, syncError, paused: false, active, history}).type === 'start') throw new Error('A scheduled meeting is due and takes priority.');
           const checkedAt = Date.now();
           const snapshot = await readDropInRoom({google, url: settings.dropInUrl, spaceName: settings.dropInSpace});
           const event = retryDropInEvent({now: Date.now(), snapshot: {...snapshot, checkedAt}, enabled: settings.dropInEnabled, paused: settings.paused, verified: settings.browserVerified, calendarFresh: !syncError && lastSync > 0 && Date.now() - lastSync <= 90_000, active, history});
@@ -396,7 +390,7 @@ const server = http.createServer(async (req, res) => {
       const [file, type] = staticFiles[u.pathname]; return reply(res, 200, fs.readFileSync(path.join(here, '../web', file), 'utf8'), type);
     }
     reply(res, 404, {error: 'Not found.'});
-  } catch (error) { reply(res, 400, {error: error.message}); }
+  } catch (error) { reply(res, error.status || 400, {error: error.message}); }
 });
 
 server.requestTimeout = 20_000;

@@ -10,6 +10,8 @@ export class SnapshotPoller {
     if (!force && this.now() < this.next) return Promise.resolve();
     const generation = this.generation;
     this.busy = (async () => {
+      // Yield before read: synchronous throws must not clear busy before assignment.
+      await Promise.resolve();
       try { const snapshot = await this.read(); if (generation === this.generation) this.publish(snapshot, this.now()); }
       catch (error) { if (generation === this.generation) this.failed(error); }
       finally { if (generation === this.generation) this.next = this.now() + this.interval; this.busy = null; }

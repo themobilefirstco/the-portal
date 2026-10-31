@@ -27,16 +27,16 @@ export function normalizeEvents(items, email) {
   return result.sort((a,b) => a.start - b.start || a.id.localeCompare(b.id));
 }
 
-export function decide({now, events, lastSync, paused, active, history = {}}) {
-  const fresh = lastSync > 0 && now - lastSync <= FRESH_MS;
+export function decide({now, events, lastSync, paused, active, history = {}, syncError = false}) {
+  const fresh = !syncError && lastSync > 0 && now >= lastSync && now - lastSync <= FRESH_MS;
   if (active) {
     if (active.source === 'agent') {
       if (now >= active.end) return {type: 'finish', reason: 'Agent-requested call duration reached'};
-      const scheduled = decide({now, events, lastSync, paused, active: null, history});
+      const scheduled = decide({now, events, lastSync, paused, active: null, history, syncError});
       return scheduled.type === 'start' ? {type: 'finish', reason: 'A scheduled meeting is starting. Leaving the agent-requested call.'} : {type: 'hold'};
     }
     if (active.source === 'drop-in') {
-      const scheduled = decide({now, events, lastSync, paused, active: null, history});
+      const scheduled = decide({now, events, lastSync, paused, active: null, history, syncError});
       return scheduled.type === 'start' ? {type: 'finish', reason: 'A scheduled meeting is starting. Leaving the drop-in room.'} : {type: 'hold'};
     }
     if (now >= active.end) return {type: 'finish', reason: 'Scheduled end reached'};
