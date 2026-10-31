@@ -65,7 +65,7 @@ Run `Open Portal.command` to reopen the authenticated control page. A bare `http
 
 The service runs **after this macOS user logs in**, not at the FileVault unlock screen. It prevents idle sleep while active, but does not configure automatic login, TV power, power-loss restart, or network availability. See [installation and operation](docs/installation.md).
 
-**Update:** leave any active call, pull a reviewed release into your fork, and run `./setup.command` again. Setup stages application files, checks startup, and restores the previous installation if activation fails. Google state is kept separately. This preview requires source updates; it does not silently download app updates.
+**Update:** leave any active call, pull a reviewed release into your fork, and run `./setup.command` again. Setup stages application files and checks startup. If activation fails, it attempts to stop the new service and restore the previous installation; if stopping fails, it preserves both copies for manual recovery. Google state is kept separately. This preview requires source updates; it does not silently download app updates.
 
 ## Development
 

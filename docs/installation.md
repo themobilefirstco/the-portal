@@ -9,7 +9,7 @@ The preview is installed from source with `./setup.command`. It uses a per-user 
 3. Compiles the small Swift Keychain helper using Apple's compiler and applies an ad-hoc identity for this source build.
 4. Runs all tests, including a temporary headless Chrome fixture. Any failed check stops installation.
 5. Stages the complete app before stopping an existing service. Active calls and unauthenticated controller responses block an update.
-6. Replaces application files, starts the user service, and checks the application version and scheduler heartbeat. Failed activation restores the previous files and attempts to restart them.
+6. Replaces application files, starts the user service, and checks the application version and scheduler heartbeat. Failed activation attempts to stop the new service, restore the previous files and restart them. If stopping fails, both installations are preserved and setup reports a recovery error.
 7. Opens the authenticated room controls in your browser.
 
 An unsigned source build is not a notarized app download. macOS Keychain may request permission for the helper; verify the path belongs to your checkout or installed Portal app. Rebuilding the helper can cause another prompt. A future Developer ID-signed release should use a stable signing identity.
@@ -33,6 +33,8 @@ The installed service uses the standard paths and ports above. Advanced foregrou
 ## Updates and stopping
 
 Leave any call, fetch a reviewed version into your fork, and run setup again. Tests run before the service is touched. State format migrations must remain backward compatible with the previous release for rollback; this first public version has no destructive migration.
+
+If setup reports that the new service could not stop, do not delete its application files or `.previous-*` backup. Leave the call, stop the service successfully, and preserve the backup while investigating the error. A subsequent setup does not automatically select an older backup from an interrupted attempt.
 
 Run `Stop Portal.command` to stop the service and remove its login startup item. It preserves state and credentials. It closes the owned room Chrome instance when the controller shuts down. Re-run setup to reinstall/start it.
 

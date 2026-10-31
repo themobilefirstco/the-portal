@@ -23,7 +23,7 @@ Start with room controls. Calendar, browser and guest monitoring are separate de
 | Call does not leave when alone | Scheduled calls wait until another participant has first been observed. Missing participant counts cancel the timer. Drop-ins use API observations; their three-hour maximum still applies. Use Leave if necessary. |
 | Browser running but no TV window | Controls should report a display problem. The engine tries to recover a missing owned display; use Open room display when idle. Confirm display/input placement. |
 | Port already in use | Stop the conflicting controller. Do not kill arbitrary processes. Installed Portal uses 4280 and 4281. |
-| Startup registration fails | Setup retries transient launchd registration failures and restores the previous files if activation fails. Inspect the reported failure, confirm this user is logged into a GUI session, then retry from Terminal. |
+| Startup registration fails | Setup retries transient launchd registration failures and attempts rollback if activation fails. If it cannot stop the service, it preserves both copies; see installation recovery instructions. Inspect the reported failure, confirm this user is logged into a GUI session, then retry from Terminal. |
 | Mac does not recover after power loss | App startup, power-return settings and user login are separate. Review the installation guide and test those transitions explicitly. |
 
 Pause prevents **new** calls; it does not leave the active call. Use Leave as well when you want the room disconnected. Manual Leave suppresses automatic rejoining of that event/conference.
