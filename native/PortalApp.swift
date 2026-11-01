@@ -50,6 +50,7 @@ final class PortalApp: NSObject, NSApplicationDelegate, WKNavigationDelegate, WK
         window = NSWindow(contentRect: NSRect(x:0,y:0,width:680,height:740), styleMask:[.titled,.closable,.miniaturizable,.resizable,.fullSizeContentView], backing:.buffered, defer:false)
         window.title = testMode ? "The Portal — isolated test" : "The Portal"
         window.minSize = NSSize(width:520,height:560)
+        window.appearance = NSAppearance(named:.aqua)
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.toolbarStyle = .unified
@@ -69,7 +70,7 @@ final class PortalApp: NSObject, NSApplicationDelegate, WKNavigationDelegate, WK
         configuration.userContentController.addUserScript(WKUserScript(source:"document.documentElement.classList.add('native-host');",injectionTime:.atDocumentEnd,forMainFrameOnly:true))
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
         web = WKWebView(frame:.zero,configuration:configuration)
-        web.translatesAutoresizingMaskIntoConstraints=false; web.underPageBackgroundColor = .clear
+        web.translatesAutoresizingMaskIntoConstraints=false; web.underPageBackgroundColor = .clear; web.isHidden=true
         web.navigationDelegate = self; web.uiDelegate = self
         window.contentView!.addSubview(web)
         NSLayoutConstraint.activate([
@@ -79,7 +80,7 @@ final class PortalApp: NSObject, NSApplicationDelegate, WKNavigationDelegate, WK
             web.bottomAnchor.constraint(equalTo:window.contentView!.bottomAnchor)
         ])
         loadingView=NSVisualEffectView(frame:.zero); loadingView.material = .hudWindow
-        loadingView.blendingMode = .withinWindow; loadingView.state = .active
+        loadingView.blendingMode = .behindWindow; loadingView.state = .active
         loadingView.translatesAutoresizingMaskIntoConstraints=false
         window.contentView!.addSubview(loadingView)
         NSLayoutConstraint.activate([
@@ -190,7 +191,7 @@ final class PortalApp: NSObject, NSApplicationDelegate, WKNavigationDelegate, WK
                     guard p.isRunning else { return }
                     var components=URLComponents(url:origin,resolvingAgainstBaseURL:false)!
                     components.fragment="key=\(token)"
-                    web.isHidden=false; ready=true
+                    ready=true
                     web.load(URLRequest(url:components.url!))
                     return
                 }
@@ -256,6 +257,7 @@ final class PortalApp: NSObject, NSApplicationDelegate, WKNavigationDelegate, WK
     }
     func webView(_ webView:WKWebView,didFinish navigation:WKNavigation!) {
         if let url=webView.url, localURL(url,port:port), ready {
+            web.isHidden=false
             spinner.stopAnimation(nil)
             NSAnimationContext.runAnimationGroup({ context in
                 context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.2

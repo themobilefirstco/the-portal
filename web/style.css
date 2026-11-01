@@ -11,8 +11,8 @@
 .portal-app .lede{font-size:14px;line-height:1.6}.portal-app .form-card label,.portal-app .field-label{font-size:12px}.portal-app input:not([type=range]):not([type=checkbox]),.portal-app select{font-size:14px}.portal-app .field-help,.portal-app .form-card small,.portal-app .guide-step p{font-size:12px}.portal-app .step-link>span:nth-child(2){font-size:9px;letter-spacing:.3px}.portal-app button:not(.step-link):not(.workspace-button):not(.text-button){font-size:13px}
 
 /* Native window: the Mac toolbar owns the title and app actions. */
-.native-host, .native-host body { height:100%; background:transparent; }
-.native-host .portal-app { padding:10px 12px 12px; overflow:hidden; }
+.native-host, .native-host body { height:100%; background:#eeece2; }
+.native-host .portal-app { padding:10px 12px 12px; overflow:hidden; background:#eeece2; }
 .native-host .desktop-frame { max-width:none; height:100%; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
 .native-host .window-titlebar, .native-host .sidebar-label, .native-host .sidebar-bottom,
 .native-host .perforated-speaker, .native-host .speaker-label, .native-host .workspace-button,
