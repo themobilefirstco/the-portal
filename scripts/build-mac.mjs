@@ -55,7 +55,10 @@ if(flags.has('--dmg')){
  fs.cpSync(app,path.join(stage,'The Portal.app'),{recursive:true}); fs.symlinkSync('/Applications',path.join(stage,'Applications'));
  fs.writeFileSync(path.join(stage,'READ ME.txt'),`The Portal ${VERSION}\n\nDrag The Portal into Applications, then open it. macOS 14 or later. Install Google Chrome when prompted. No Terminal, Node installation or developer tools required.\n\n${identity==='-'?'UNSIGNED PREVIEW: this build is ad-hoc signed, not Developer ID signed or notarized. macOS will warn or block it. Only use this preview if you trust its source. Never disable Gatekeeper.':''}\n\nClosing the window keeps the room running. Quit stops the room and its Chrome session. Open at Login is optional in the app menu. Google setup and real device tests still require the owner.\n\nhttps://github.com/themobilefirstco/the-portal/blob/main/docs/mac-app.md\n`);
  const dmg=path.resolve('dist',`The-Portal-${VERSION}-${os.arch()}${identity==='-'?'-unsigned':''}.dmg`);
- fs.rmSync(dmg,{force:true});run('hdiutil',['create','-volname','The Portal','-srcfolder',stage,'-ov','-format','UDZO',dmg]);
+ const directoryBytes=dir=>fs.readdirSync(dir,{withFileTypes:true}).reduce((sum,item)=>{const file=path.join(dir,item.name);return sum+(item.isDirectory()?directoryBytes(file):item.isFile()?fs.statSync(file).size:0);},0);
+ const imageMB=Math.max(512,Math.ceil(directoryBytes(stage)*1.5/1024/1024)+64);
+ // Explicit headroom avoids hdiutil underestimating the temporary filesystem for large signed runtimes.
+ fs.rmSync(dmg,{force:true});run('hdiutil',['create','-volname','The Portal','-fs','HFS+','-size',`${imageMB}m`,'-srcfolder',stage,'-ov','-format','UDZO',dmg]);
  console.log(dmg);
 }
 console.log(`Built ${app}. ${identity==='-'?'Unsigned preview: not notarized.':'Developer ID signed; notarization is still required.'}`);
