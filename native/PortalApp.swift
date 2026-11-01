@@ -51,6 +51,7 @@ final class PortalApp: NSObject, NSApplicationDelegate, WKNavigationDelegate, WK
         window.center()
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
+        configuration.userContentController.addUserScript(WKUserScript(source:"window.portalNativeHost = true;",injectionTime:.atDocumentStart,forMainFrameOnly:true))
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
         web = WKWebView(frame:window.contentView!.bounds,configuration:configuration)
         web.autoresizingMask = [.width,.height]

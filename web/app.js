@@ -138,6 +138,12 @@ $('clientFile').onchange = async event => {
   finally { event.target.value = ''; }
 };
 async function connectGoogle(meet = false) {
+  if (window.portalNativeHost) {
+    // The native navigation delegate opens HTTPS externally and keeps this view local.
+    try { const result = await api('connect', {meet}); location.href = result.url; }
+    catch (e) { toast(e.message, true); }
+    return;
+  }
   // Open directly from the click so browser popup protection does not block OAuth.
   const tab = window.open('about:blank', '_blank');
   try { const result = await api('connect', {meet}); if (tab) { tab.opener = null; tab.location = result.url; } else location.href = result.url; }
