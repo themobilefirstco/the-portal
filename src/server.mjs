@@ -254,7 +254,7 @@ const server = http.createServer(async (req, res) => {
     if (req.headers.host !== `127.0.0.1:${port}`) return reply(res, 403, {error: 'Open the controller using 127.0.0.1.'});
     const u = new URL(req.url, origin);
     if (req.headers.origin && req.headers.origin !== origin) return reply(res, 403, {error: 'Cross-site request blocked.'});
-    if (u.pathname === '/health' && req.method === 'GET') return reply(res, 200, {app: 'the-portal', version: VERSION, controllerLastTick: lastTickAt || null});
+    if (u.pathname === '/health' && req.method === 'GET') return reply(res, 200, {app: 'the-portal', version: VERSION, controllerLastTick: lastTickAt || null, ...(process.env.PORTAL_DESKTOP_INSTANCE ? {desktopInstance:process.env.PORTAL_DESKTOP_INSTANCE} : {})});
     if (u.pathname === '/room-status' && req.method === 'GET') return reply(res, 200, publicState());
     if (u.pathname === '/oauth/callback' && req.method === 'GET') {
       try {
@@ -414,3 +414,9 @@ const awake = process.env.PORTAL_NO_BROWSER ? null : spawn('/usr/bin/caffeinate'
 awake?.on('error', () => {});
 async function stop() { if (stopping) return; stopping = true; clearInterval(timer); clearInterval(calendarTimer); clearInterval(dropInTimer); agentServer.close(); awake?.kill(); await chrome.stop(); server.close(() => process.exit(0)); setTimeout(() => process.exit(0), 2000).unref(); }
 process.on('SIGTERM', stop); process.on('SIGINT', stop);
+
+// If the native host crashes, stop its controller and room browser as well.
+const desktopParent = Number(process.env.PORTAL_PARENT_PID);
+if (process.env.PORTAL_DESKTOP_INSTANCE && Number.isInteger(desktopParent) && desktopParent > 1) {
+  setInterval(() => { try { process.kill(desktopParent, 0); } catch (error) { if (error.code === 'ESRCH') void stop(); } }, 2000).unref();
+}

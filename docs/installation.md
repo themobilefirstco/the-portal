@@ -1,5 +1,7 @@
 # Install and operate The Portal
 
+For the downloadable Mac app (no developer tools needed), use the [Mac app guide](mac-app.md). The instructions below are for source installations.
+
 The preview is installed from source with `./setup.command`. It uses a per-user macOS LaunchAgent, not a root service. Do not run setup with `sudo`.
 
 ## What setup does

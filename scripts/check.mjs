@@ -6,7 +6,7 @@ import {VERSION} from '../src/config.mjs';
 const files = [];
 function walk(dir) {
   for (const item of fs.readdirSync(dir, {withFileTypes: true})) {
-    if (['.git','runtime','node_modules'].includes(item.name)) continue;
+    if (['.git','runtime','node_modules','dist'].includes(item.name)) continue;
     const p = path.join(dir, item.name);
     if (item.isDirectory()) walk(p); else files.push(p);
   }

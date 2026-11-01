@@ -26,6 +26,23 @@ jobs:
         run: runtime/node scripts/check.mjs
       - name: Run full synthetic test suite
         run: runtime/node scripts/test.mjs
+      - name: Build isolated native app and test WKWebView lifecycle
+        run: |
+          runtime/node scripts/build-mac.mjs --unsigned --testing
+          runtime/node scripts/test-mac.mjs
+      - name: Build downloadable unsigned preview
+        run: |
+          runtime/node scripts/build-mac.mjs --unsigned --dmg
+          cd dist
+          shasum -a 256 *.dmg > SHA256SUMS
+      - name: Upload Mac download
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: portal-${{ matrix.os }}
+          path: |
+            dist/*.dmg
+            dist/SHA256SUMS
+          if-no-files-found: error
   secrets:
     name: Credential scan (full history)
     runs-on: ubuntu-latest

@@ -1,6 +1,6 @@
 # The Portal: agent entry point
 
-Local macOS room controller, Google accounts and Google Meet only. This is a source preview, not a signed native app. Requires a logged-in graphical Mac session, Chrome, internet and real room devices. Cloning is enough; forking is optional.
+Local macOS room controller, Google accounts and Google Meet only. A native unsigned preview and source installation are available; see [Mac app guide](docs/mac-app.md). Neither is a notarized release. Requires a logged-in graphical Mac session, Chrome, internet and real room devices. Cloning is enough; forking is optional.
 
 ## Install and configure
 

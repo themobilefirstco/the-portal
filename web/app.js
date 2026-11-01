@@ -149,7 +149,7 @@ let connectionError = false;
 async function refresh() {
   if (!key || busy) return;
   try { render(await api('status')); if (connectionError) $('toast').hidden = true; connectionError = false; }
-  catch (e) { connectionError = true; toast(e instanceof TypeError ? 'Controller offline. Run setup.command to start it, then use Open Portal.command.' : e.message, true); }
+  catch (e) { connectionError = true; toast(e instanceof TypeError ? 'Controller offline. Quit and reopen The Portal app. For source installations, run setup.command, then Open Portal.command.' : e.message, true); }
 }
 if (!key) { $('locked').hidden = false; document.querySelectorAll('button,input').forEach(e => e.disabled = true); }
 else { refresh(); setInterval(refresh, 4000); }

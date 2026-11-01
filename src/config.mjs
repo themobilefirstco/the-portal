@@ -1,7 +1,7 @@
 import os from 'node:os';
 import path from 'node:path';
 
-export const VERSION = '0.1.0';
+export const VERSION = '0.2.0';
 export const DATA_DIR = process.env.PORTAL_DATA_DIR || path.join(os.homedir(), 'Library/Application Support/The Portal/state');
 export const DEFAULTS = Object.freeze({schemaVersion: 1, roomName: 'The Portal', roomEmail: '', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   paused: true, dashboard: '', browserVerified: false, aloneLeaveSeconds: 60,

@@ -16,3 +16,6 @@ control-key.json
 agent-access.json
 *.zip
 *.tar.gz
+
+dist/
+*.dmg
