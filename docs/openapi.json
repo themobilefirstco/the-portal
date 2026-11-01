@@ -192,7 +192,7 @@
     },
     "/v1/leave": {
       "post": {
-        "summary": "Request leave; poll outcome, acceptance is not completion",
+        "summary": "Leave the active call; success is returned as 200",
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -224,11 +224,8 @@
           }
         },
         "responses": {
-          "202": {
-            "description": "Accepted; poll /v1/requests/{requestId}"
-          },
           "200": {
-            "description": "Existing idempotent request"
+            "description": "Leave completed (outcome left), including a replay of the same Idempotency-Key"
           },
           "400": {
             "description": "Invalid request"
