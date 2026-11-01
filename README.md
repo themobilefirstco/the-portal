@@ -30,15 +30,17 @@ The Portal displays your dashboard between calls, joins Google Meet invitations 
 
 You need a Mac with a signed-in desktop session, Google Chrome, a Google account, internet access, and camera/microphone/speaker hardware. macOS 14 or newer is the initial target; Apple Silicon is the reference test platform. Intel runtime downloads are provided but hardware validation is still pending.
 
-1. **Fork this repository** using GitHub's Fork button. You own your configuration and Google project; no company credentials are included.
+1. **Clone the upstream repository.** Forking is optional. A fork is useful when you want to contribute changes, and it is not required to run a room. You bring your own Google Cloud project and Desktop OAuth client; no company credentials are included.
 2. Install [Google Chrome](https://www.google.com/chrome/) and Apple's Command Line Tools. In Terminal, run `xcode-select --install` if you do not already have them, and wait for that installation to finish.
-3. Clone your fork. Replace `YOUR_GITHUB_NAME` with your username or organization:
+3. Clone upstream and run setup:
 
    ```bash
-   git clone https://github.com/YOUR_GITHUB_NAME/the-portal.git
+   git clone https://github.com/themobilefirstco/the-portal.git
    cd the-portal
    ./setup.command
    ```
+
+   Clone your fork instead when you are contributing changes back.
 
    Setup downloads a pinned official Node runtime, verifies its SHA-256, builds the Keychain helper, runs the full test suite, installs a user login service, and opens room controls. You do not need Homebrew or `npm install`. Allow your own Portal helper to access its credentials if macOS asks. Setup refuses to replace a running active call.
 4. In room controls, save the room name, **the Google account's actual sign-in email**, and time zone.
@@ -46,7 +48,7 @@ You need a Mac with a signed-in desktop session, Google Chrome, a Google account
 6. Select and test your devices in Google Meet. The Portal cannot grant macOS permissions for you. Complete a short invited test call, then choose **Resume auto-join**. New installations are paused by default.
 7. Optional: follow the [drop-in room guide](docs/drop-in.md), [create a branded room URL](docs/branded-room-url.md), and add your dashboard address.
 
-The Google setup is required because this is a forkable application using your own OAuth client. There is no shared public OAuth client or claim that Google has verified this project. Gmail and Workspace accounts have different consent-screen steps; the guide covers both.
+The Google setup is required because you bring your own OAuth client. There is no shared public OAuth client or claim that Google has verified this project. Gmail and Workspace accounts have different consent-screen steps; the guide covers both.
 
 ## One memorable URL for your team
 
@@ -73,7 +75,7 @@ Run `Open Portal.command` to reopen the authenticated control page. A bare `http
 
 The service runs **after this macOS user logs in**, not at the FileVault unlock screen. It prevents idle sleep while active, but does not configure automatic login, TV power, power-loss restart, or network availability. See [installation and operation](docs/installation.md).
 
-**Update:** leave any active call, pull a reviewed release into your fork, and run `./setup.command` again. Setup stages application files and checks startup. If activation fails, it attempts to stop the new service and restore the previous installation; if stopping fails, it preserves both copies for manual recovery. Google state is kept separately. This preview requires source updates; it does not silently download app updates.
+**Update:** leave any active call, pull a reviewed release, and run `./setup.command` again. Setup stages application files and checks startup. If activation fails, it attempts to stop the new service and restore the previous installation; if stopping fails, it preserves both copies for manual recovery. Google state is kept separately. This preview requires source updates; it does not silently download app updates.
 
 ## Development
 

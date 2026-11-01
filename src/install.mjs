@@ -8,11 +8,12 @@ import {startService} from './service-start.mjs';
 import {deploy} from './deployment.mjs';
 import {KeychainStore} from './secrets.mjs';
 import {VERSION} from './config.mjs';
+import {servicePlist} from './service-plist.mjs';
 
 const flags = new Set(process.argv.slice(2));
-const allowed = ['--non-interactive', '--no-open', '--skip-tests', '--stop', '--uninstall', '--help'];
+const allowed = ['--non-interactive', '--no-open', '--skip-tests', '--stop', '--uninstall', '--help', '-h'];
 if ([...flags].some(flag => !allowed.includes(flag))) throw new Error('Unknown installer option. Use --help.');
-if (flags.has('--help')) {
+if (flags.has('--help') || flags.has('-h')) {
   console.log('Usage: setup.command [--non-interactive] [--no-open] [--skip-tests] [--uninstall|--stop]');
   console.log('Non-interactive never opens setup. Google consent and macOS permissions still require a human. Uninstall preserves state and credentials.');
   process.exit(0);
@@ -49,21 +50,12 @@ if (loaded()) {
     if ((await response.json()).active) throw new Error('A meeting is active. Run setup again after leaving the call.');
   } catch (error) { throw new Error(`Update stopped before changing files: ${error.message}`); }
 }
-const xml = s => s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 fs.mkdirSync(state, {recursive: true, mode: 0o700});
 fs.mkdirSync(path.dirname(plist), {recursive: true});
-const doc = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict>
-<key>Label</key><string>${label}</string>
-<key>ProgramArguments</key><array><string>${xml(path.join(app,'runtime/node'))}</string><string>${xml(path.join(app,'src/server.mjs'))}</string></array>
-<key>WorkingDirectory</key><string>${xml(app)}</string>
-<key>EnvironmentVariables</key><dict><key>PORTAL_DATA_DIR</key><string>${xml(state)}</string>${flags.has('--non-interactive') ? '<key>PORTAL_NON_INTERACTIVE</key><string>1</string>' : ''}</dict>
-<key>RunAtLoad</key><true/><key>KeepAlive</key><true/>
-<key>LimitLoadToSessionType</key><string>Aqua</string><key>ThrottleInterval</key><integer>15</integer>
-<key>StandardOutPath</key><string>${xml(path.join(root,'controller.log'))}</string>
-<key>StandardErrorPath</key><string>${xml(path.join(root,'controller-error.log'))}</string>
-</dict></plist>`;
+const doc = servicePlist({
+  label, nodePath: path.join(app, 'runtime/node'), serverPath: path.join(app, 'src/server.mjs'),
+  workingDirectory: app, stateDir: state, stdoutPath: path.join(root, 'controller.log'), stderrPath: path.join(root, 'controller-error.log'),
+});
 const priorPlist = fs.existsSync(plist) ? fs.readFileSync(plist) : null;
 fs.writeFileSync(plist, doc, {mode: 0o600});
 if (spawnSync('/usr/bin/plutil', ['-lint', plist]).status !== 0) throw new Error('Invalid service definition.');

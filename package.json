@@ -2,7 +2,16 @@
   "name": "the-portal",
   "version": "0.1.0",
   "private": true,
-  "description": "A local Google Meet room controller for macOS",
+  "description": "Local macOS Google Meet room controller for a Mac mini kiosk, with calendar invites, drop-in meetings, and an office dashboard between calls.",
+  "keywords": [
+    "google-meet",
+    "mac-mini",
+    "kiosk",
+    "calendar",
+    "drop-in",
+    "office-portal",
+    "video-conferencing"
+  ],
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -12,7 +21,9 @@
     "start": "node src/server.mjs",
     "test": "node scripts/test.mjs",
     "test:unit": "node scripts/test.mjs --unit",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "apply-config": "node scripts/apply-config.mjs"
   },
   "repository": {
     "type": "git",
