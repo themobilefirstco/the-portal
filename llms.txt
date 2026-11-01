@@ -1,6 +1,7 @@
 # The Portal
-> Open-source local macOS Google Meet room controller. Source preview; Google accounts only.
+> Open-source local macOS Google Meet room controller. Native unsigned preview and source builds; Google accounts only.
 
+- [Mac app installation](docs/mac-app.md): downloadable app, unsigned-preview limits and native build process.
 - [Agent instructions](AGENTS.md): limits, ports, logs, commands and checks.
 - [Agent setup](docs/agent-setup.md): headless install, configuration and local bearer bootstrap.
 - [Configuration schema](config.schema.json): strict JSON shape; no inline secrets.

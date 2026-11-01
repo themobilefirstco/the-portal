@@ -16,7 +16,7 @@ The Portal displays your dashboard between calls, joins Google Meet invitations 
 
 **Google Meet and Google accounts only.** No Gmail inbox access, Zoom, Teams, recording, transcription, or hosted account is required. Use an existing Google account with Calendar and Meet access; The Portal does not create an email account.
 
-**Status: source preview, v0.1.0.** This release focuses on the engine, installation, tests, and documentation. The interface is functional; a designed native Mac app and signed installer are future work. Browser automation depends on Google's interface, and passing automated tests does not replace the [live acceptance checklist](docs/acceptance.md).
+**Status: native unsigned preview, v0.2.0.** Downloadable Mac apps include the room controller and guided setup. Developer ID signing and notarization remain future work. Browser automation depends on Google's interface, and passing automated tests does not replace the [live acceptance checklist](docs/acceptance.md).
 
 ## What it does
 
@@ -32,21 +32,15 @@ The Portal displays your dashboard between calls, joins Google Meet invitations 
 
 You need a Mac with a signed-in desktop session, Google Chrome, a Google account, internet access, and camera/microphone/speaker hardware. macOS 14 or newer is the initial target; Apple Silicon is the reference test platform. Intel runtime downloads are provided but hardware validation is still pending.
 
-1. **Fork this repository** using GitHub's Fork button. You own your configuration and Google project; no company credentials are included.
-2. Install [Google Chrome](https://www.google.com/chrome/) and Apple's Command Line Tools. In Terminal, run `xcode-select --install` if you do not already have them, and wait for that installation to finish.
-3. Clone your fork. Replace `YOUR_GITHUB_NAME` with your username or organization:
+1. Download the matching **Apple Silicon or Intel DMG** from [releases](https://github.com/themobilefirstco/the-portal/releases). Drag **The Portal** into Applications and open it. See the [Mac app guide](docs/mac-app.md) for unsigned-preview approval and existing-installation migration.
+2. Install [Google Chrome](https://www.google.com/chrome/) if needed. The app includes its own runtime; no developer tools are required.
+3. Follow the six setup steps inside the app. Save the room name, actual Google sign-in email and time zone.
+4. Create your own Google Cloud Desktop OAuth client, import its JSON using the native file chooser, and connect Google in your system browser. Then sign into the separate room Chrome profile with the same account. [Google setup guide](docs/google-setup.md).
+5. Approve and test camera, microphone and speakers with another participant. New rooms stay paused until you enable automatic joining.
+6. Optionally configure a dedicated [drop-in room](docs/drop-in.md) and [branded room URL](docs/branded-room-url.md), then complete the real call check.
+7. Enable **The Portal → Open at Login** if this Mac should run the room after each login.
 
-   ```bash
-   git clone https://github.com/YOUR_GITHUB_NAME/the-portal.git
-   cd the-portal
-   ./setup.command
-   ```
-
-   Setup downloads a pinned official Node runtime, verifies its SHA-256, builds the Keychain helper, runs the full test suite, installs a user login service, and opens room controls. You do not need Homebrew or `npm install`. Allow your own Portal helper to access its credentials if macOS asks. Setup refuses to replace a running active call.
-4. In room controls, save the room name, **the Google account's actual sign-in email**, and time zone.
-5. Follow the [Google connection guide](docs/google-setup.md). Create your own Google Cloud project and Desktop OAuth client, import its JSON, and connect the room account. Then sign in to the **separate room Chrome profile** with the same account and click **Check account**.
-6. Select and test your devices in Google Meet. The Portal cannot grant macOS permissions for you. Complete a short invited test call, then choose **Resume auto-join**. New installations are paused by default.
-7. Optional: follow the [drop-in room guide](docs/drop-in.md), [create a branded room URL](docs/branded-room-url.md), and add your dashboard address.
+**Prefer source or agent installation?** Clone directly or fork, then follow [source installation](docs/installation.md) or [agent setup](docs/agent-setup.md). Source builds require Apple's developer tools; downloaded apps do not. A fork is optional.
 
 The Google setup is required because this is a forkable application using your own OAuth client. There is no shared public OAuth client or claim that Google has verified this project. Gmail and Workspace accounts have different consent-screen steps; the guide covers both.
 
@@ -64,14 +58,14 @@ Meeting rooms should be easy to join and easy to trust. Help us make The Portal 
 
 - **Have a Mac mini?** Follow the guide and [report your setup results](https://github.com/themobilefirstco/the-portal/issues/new?template=setup-report.yml). A documented failure is useful too.
 - **Write code?** Pick a task from the [roadmap](docs/roadmap.md), fork the project, and open a draft PR. Include the problem, the fix and how you tested it.
-- **Care about a great Mac experience?** Help define accessible onboarding and recovery flows. The native app comes after the engine and setup are dependable.
+- **Care about a great Mac experience?** Help define accessible onboarding and recovery flows. Test the native app on your Mac and help improve onboarding, accessibility and recovery.
 - **Know someone building meeting rooms?** Share the project. Star it if you want to help others discover it, and watch releases for future updates.
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for a safe development setup. Keep PRs focused; open an issue before a large change. Never include real credentials, meeting links, attendee details or browser profiles. We welcome first-time contributors, documentation improvements and candid bug reports.
 
 ## Everyday use
 
-Run `Open Portal.command` to reopen the authenticated control page. A bare `http://127.0.0.1:4280` page deliberately cannot change settings without its control key. Run `Stop Portal.command` to stop the controller and disable login startup, preserving settings and credentials.
+Open **The Portal** from Applications, the Dock or its menu bar icon. Closing its window keeps the room running; quitting stops it and closes the room Chrome session. For source installations, run `Open Portal.command` to reopen the authenticated control page. A bare `http://127.0.0.1:4280` page deliberately cannot change settings without its control key. Run `Stop Portal.command` to stop the controller and disable login startup, preserving settings and credentials.
 
 The service runs **after this macOS user logs in**, not at the FileVault unlock screen. It prevents idle sleep while active, but does not configure automatic login, TV power, power-loss restart, or network availability. See [installation and operation](docs/installation.md).
 

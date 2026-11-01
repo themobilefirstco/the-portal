@@ -18,7 +18,7 @@ The goal is a dependable Google Meet room that another person can set up from th
 2. **Prove recovery:** overnight operation, reboot/login, network outages, Chrome crashes and device reconnection. Follow the [live acceptance checklist](acceptance.md).
 3. **Reduce command blocking:** move slow browser and Google setup operations out of the command queue while preserving serialized state changes and prompt Leave actions.
 4. **Harden installation:** test interrupted upgrades, concurrent installers, authenticated instance checks and recovery in a disposable macOS user.
-5. **Build the native Mac app:** accessible onboarding, clear camera/microphone state, signed/notarized distribution, then safe updates.
+5. **Harden native distribution:** the unsigned app is available; next are clean-Mac acceptance, Developer ID signing/notarization and safe updates.
 
 ## Stay focused
 

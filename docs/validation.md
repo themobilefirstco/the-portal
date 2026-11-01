@@ -27,3 +27,11 @@ The [October 31 review](qa-review-2026-10-31.md) records the fixes, credential a
 - Intel hardware validation and the two-room multi-day pilot described in [acceptance](acceptance.md).
 
 The first release is intentionally a source preview. Native designed UI, notarized distribution, signed automatic updates and fully validated unattended hardware support are not claimed.
+
+## Native app preview (0.2.0)
+
+The native build is now compiled and tested in CI on Apple Silicon and Intel. The dedicated native smoke test opens WKWebView with isolated, synthetic room state, verifies authenticated onboarding loads and quits, then checks the controller stopped. The source suite still runs all 111 tests. Build artifacts are DMGs with SHA-256 checksums.
+
+Local UI inspection also confirmed room save/step advance and the native file chooser, followed by controller shutdown on Quit. The local restricted shell could not launch the GUI fixture directly; it was inspected through desktop controls and the automated lifecycle test runs in CI.
+
+No Developer ID certificate or notarization is present. Fresh-download Gatekeeper, fresh-user Keychain consent, actual Google OAuth, Login Items persistence and live room hardware remain manual acceptance work. The source preview's historical validation entries above are not claims that these native checks were already completed then.
