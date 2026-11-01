@@ -225,7 +225,7 @@
         },
         "responses": {
           "200": {
-            "description": "Leave completed (outcome left), including a replay of the same Idempotency-Key"
+            "description": "Completed leave or replayed request record. Check outcome: left confirms completion; interrupted means a controller restart prevented confirmation. Read current status before sending another command."
           },
           "400": {
             "description": "Invalid request"
