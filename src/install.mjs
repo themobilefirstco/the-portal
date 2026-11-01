@@ -71,6 +71,7 @@ try {
   await deploy({source, destination: app, stop,
     entries: ['src', 'web', 'package.json', 'runtime/node', 'runtime/portal-keychain', 'runtime/NODE-LICENSE'],
     start: () => startService({launch, domain, label, plist}),
+    restore: async () => { if (priorPlist) fs.writeFileSync(plist, priorPlist); },
     verify: async () => {
       for (let i = 0; i < 40; i++) {
         try { const r = await fetch('http://127.0.0.1:4280/health', {signal: AbortSignal.timeout(1000)});

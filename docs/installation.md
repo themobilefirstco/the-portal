@@ -51,3 +51,7 @@ Tailscale or screen sharing can help with maintenance, but is not required for n
 ## Coexistence with another room controller
 
 Do not run two controllers against the same browser profile or ports. Keep an existing production room unchanged until the new installation passes its acceptance test. The Portal uses its own app name, service label and data directory; it does not automatically import another installation's tokens, history or browser cookies.
+
+## Agent installation and uninstall
+
+For `--non-interactive`, `--no-open`, `--skip-tests`, local configuration and JSON health reports, see [agent setup](agent-setup.md). Run `runtime/node src/install.mjs --uninstall` from the checkout to remove the installed app and startup service while retaining private state and Keychain credentials.

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
-export async function deploy({source, destination, stop, start, verify, entries}) {
+export async function deploy({source, destination, stop, start, verify, entries, restore = async () => {}}) {
   const parent = path.dirname(destination);
   fs.mkdirSync(parent, {recursive: true, mode: 0o700});
   const staging = path.join(parent, `.stage-${crypto.randomUUID()}`);
@@ -27,7 +27,7 @@ export async function deploy({source, destination, stop, start, verify, entries}
     }
     if (moved) {
       fs.renameSync(previous, destination);
-      try { await start(); } catch { throw new Error(`Update failed; previous files restored but startup failed. Run setup again. Original error: ${error.message}`); }
+      try { await restore(); await start(); } catch { throw new Error(`Update failed; previous files restored but startup failed. Run setup again. Original error: ${error.message}`); }
     }
     throw error;
   } finally { fs.rmSync(staging, {recursive: true, force: true}); }

@@ -132,3 +132,9 @@ test('disconnect prevents an in-flight refresh from resurrecting Google tokens',
   await Promise.all([rejected,alsoRejected]);
   assert.equal(g.connected,false);assert.equal(values.get('google-tokens'),null);
 });
+
+ test('rollback restores the prior service definition before restarting old files', async t => {
+  const f=fixture(t); const sequence=[];
+  await assert.rejects(deploy({...f,entries:['version'],stop:async()=>{},start:async()=>sequence.push('start'),restore:async()=>sequence.push('restore'),verify:async()=>{throw Error('unhealthy');}}),/unhealthy/);
+  assert.deepEqual(sequence,['start','restore','start']);
+});
