@@ -1,0 +1,255 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "The Portal private agent API",
+    "version": "0.1.0",
+    "description": "Loopback only. Disabled by default. Bearer possession permits activating room media. Setup uses a separate local Keychain-authenticated interface."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:4281"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "paths": {
+    "/v1/status": {
+      "get": {
+        "summary": "Room state, health and active call",
+        "responses": {
+          "200": {
+            "description": "Room state, health and active call"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Invalid or missing bearer token"
+          },
+          "403": {
+            "description": "Browser origin or access not permitted"
+          },
+          "409": {
+            "description": "Conflict or stale call identity"
+          },
+          "429": {
+            "description": "Rate or protected history limit"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "summary": "Health snapshot; idle devices remain untested",
+        "responses": {
+          "200": {
+            "description": "Health snapshot; idle devices remain untested"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Invalid or missing bearer token"
+          },
+          "403": {
+            "description": "Browser origin or access not permitted"
+          },
+          "409": {
+            "description": "Conflict or stale call identity"
+          },
+          "429": {
+            "description": "Rate or protected history limit"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/v1/requests/{requestId}": {
+      "get": {
+        "summary": "Outcome of an accepted command",
+        "responses": {
+          "200": {
+            "description": "Outcome of an accepted command"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Invalid or missing bearer token"
+          },
+          "403": {
+            "description": "Browser origin or access not permitted"
+          },
+          "409": {
+            "description": "Conflict or stale call identity"
+          },
+          "429": {
+            "description": "Rate or protected history limit"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/join": {
+      "post": {
+        "summary": "Request join; poll outcome, acceptance is not completion",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{8,128}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "pattern": "^https://meet\\.google\\.com/"
+                  },
+                  "durationMinutes": {
+                    "type": "integer",
+                    "minimum": 5,
+                    "maximum": 180
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted; poll /v1/requests/{requestId}"
+          },
+          "200": {
+            "description": "Existing idempotent request"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Invalid or missing bearer token"
+          },
+          "403": {
+            "description": "Browser origin or access not permitted"
+          },
+          "409": {
+            "description": "Conflict or stale call identity"
+          },
+          "429": {
+            "description": "Rate or protected history limit"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/v1/leave": {
+      "post": {
+        "summary": "Request leave; poll outcome, acceptance is not completion",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{8,128}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "callId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "callId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted; poll /v1/requests/{requestId}"
+          },
+          "200": {
+            "description": "Existing idempotent request"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Invalid or missing bearer token"
+          },
+          "403": {
+            "description": "Browser origin or access not permitted"
+          },
+          "409": {
+            "description": "Conflict or stale call identity"
+          },
+          "429": {
+            "description": "Rate or protected history limit"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    }
+  }
+}

@@ -17,6 +17,7 @@ import {AgentError, AgentRequests, agentStatus, createAgentServer, roomHealth} f
 
 import {DEFAULTS, DATA_DIR, VERSION, roomConfig, portNumber} from './config.mjs';
 import {KeychainStore, MemorySecrets} from './secrets.mjs';
+import {SETUP_DEFAULTS, updateSetup} from './setup.mjs';
 import {SnapshotPoller} from './poller.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -30,7 +31,7 @@ if (process.env.PORTAL_TEST_MODE && !testMode) throw new Error('Test mode requir
 const secrets = testMode ? new MemorySecrets() : new KeychainStore(dataDir);
 const store = new Store(dataDir);
 const saved = store.read('settings', {});
-const settings = {...DEFAULTS, ...saved};
+const settings = {...DEFAULTS, ...saved, setup: {...SETUP_DEFAULTS, ...saved.setup}};
 const controlStore = testMode ? store : secrets;
 const secret = controlStore.read('control-key') || crypto.randomBytes(32).toString('base64url');
 controlStore.write('control-key', secret);
@@ -276,6 +277,13 @@ const server = http.createServer(async (req, res) => {
       const body = await readJsonObject(req);
       return await exclusive(async () => {
       switch (u.pathname) {
+        case '/api/setup/finish':
+          settings.setup = updateSetup({...body, completed:true}, settings, {connected:google.connected, verified:settings.browserVerified});
+          settings.paused = false; persist(); note('Setup complete. Automatic joining enabled. Test an invitation or drop-in from another device.'); break;
+        case '/api/setup':
+          if (body.completed === true) throw new Error('Use the final setup action to enable automatic joining.');
+          settings.setup = updateSetup(body, settings, {connected: google.connected, verified: settings.browserVerified});
+          persist(); break;
         case '/api/agent-access':
           if (typeof body.enabled !== 'boolean') throw new Error('Choose whether agent access is enabled.');
           agentConfig.enabled = body.enabled;
@@ -293,7 +301,7 @@ const server = http.createServer(async (req, res) => {
           if (config.roomEmail !== settings.roomEmail) {
             if (google.connected) throw new Error('Disconnect Google before changing the room account.');
             await chrome.stop();
-            settings.browserVerified = false; settings.paused = true; google.pending = null;
+            settings.browserVerified = false; settings.paused = true; google.pending = null; settings.setup = {...SETUP_DEFAULTS};
             settings.dropInEnabled = false; settings.dropInUrl = ''; settings.dropInSpace = '';
             events = []; lastSync = 0; syncError = ''; calendarPoller.invalidate();
             dropInGeneration++; dropInSnapshot = null; dropInNextCheck = 0; dropInFailures = 0;
@@ -305,7 +313,7 @@ const server = http.createServer(async (req, res) => {
           calendarPoller.invalidate();
           await google.disconnect(); await chrome.stop();
           events = []; lastSync = 0; syncError = ''; settings.paused = true;
-          settings.browserVerified = false; settings.dropInEnabled = false;
+          settings.browserVerified = false; settings.dropInEnabled = false; settings.setup = {...SETUP_DEFAULTS};
           dropInGeneration++; dropInSnapshot = null; persist();
           note('Google API access revoked. The room is paused. Sign out of the separate room Chrome profile to remove its browser session.'); break;
         case '/api/client':
@@ -323,6 +331,7 @@ const server = http.createServer(async (req, res) => {
           let verified = null;
           if (body.enabled) verified = await readDropInRoom({google, url, spaceName: url === settings.dropInUrl ? settings.dropInSpace : ''});
           const sameRoom = url === settings.dropInUrl;
+          if (!sameRoom || body.enabled !== settings.dropInEnabled) settings.setup = {...settings.setup, linkConfirmed: false, visitConfirmed: false, completed: false};
           settings.dropInUrl = url; settings.dropInEnabled = body.enabled;
           settings.dropInSpace = verified?.spaceName || (sameRoom ? settings.dropInSpace : '');
           persist(); dropInGeneration++; dropInSnapshot = null; dropInNextCheck = 0; dropInFailures = 0;
@@ -385,7 +394,7 @@ const server = http.createServer(async (req, res) => {
       return reply(res, 200, {...status(), health: health()});
       });
     }
-    const staticFiles = {'/': ['index.html','text/html'], '/display': ['display.html','text/html'], '/app.js': ['app.js','text/javascript'], '/display.js': ['display.js','text/javascript'], '/style.css': ['style.css','text/css']};
+    const staticFiles = {'/': ['index.html','text/html'], '/display': ['display.html','text/html'], '/app.js': ['app.js','text/javascript'], '/setup.js': ['setup.js','text/javascript'], '/display.js': ['display.js','text/javascript'], '/style.css': ['style.css','text/css']};
     if (req.method === 'GET' && staticFiles[u.pathname]) {
       const [file, type] = staticFiles[u.pathname]; return reply(res, 200, fs.readFileSync(path.join(here, '../web', file), 'utf8'), type);
     }

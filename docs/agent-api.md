@@ -17,3 +17,5 @@ POST requests need `Content-Type: application/json` and an `Idempotency-Key` of 
 202 means accepted, **not joined**. Poll the request: `joined` requires an observed call and initial media controls confirmed on; failures remain distinct. Startup interrupts unresolved accepted requests rather than replaying them.
 
 An agent cannot replace an active call, bypass pause, use a non-Meet URL, change accounts, turn on device-free test mode or administer the Mac. Scheduled calls take priority. Leave requires the exact current call identity. The caller's possession of this token permits activating room media, so keep it scoped and private.
+
+Machine-readable contract: [OpenAPI](openapi.json). For installation and one-time local bootstrap, see [agent setup](agent-setup.md). Configuration is deliberately kept off the bearer API.

@@ -1,5 +1,7 @@
 # The Portal
 
+**Setting up with an agent?** Start with [AGENTS.md](AGENTS.md), [the configuration guide](docs/agent-setup.md), and [the human handoff checklist](docs/human-only-checklist.md). Cloning is enough; forking is optional.
+
 Turn a Mac mini, a TV, and a camera into a Google Meet room.
 
 ![Illustrated Portal workflow: ready dashboard, visitor joins, Google Meet call, return to dashboard](docs/assets/portal-workflow.gif)

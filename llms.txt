@@ -1,0 +1,11 @@
+# The Portal
+> Open-source local macOS Google Meet room controller. Source preview; Google accounts only.
+
+- [Agent instructions](AGENTS.md): limits, ports, logs, commands and checks.
+- [Agent setup](docs/agent-setup.md): headless install, configuration and local bearer bootstrap.
+- [Configuration schema](config.schema.json): strict JSON shape; no inline secrets.
+- [Human-only checklist](docs/human-only-checklist.md): Google, Chrome, Keychain and device handoffs.
+- [Runtime API](docs/agent-api.md): status, health, join and leave.
+- [Branded URL](docs/branded-room-url.md): domain redirects to your dedicated Google Meet room.
+
+Clone directly or fork. Run doctor for JSON health and exit status. macOS login session and human consent are required; this cannot be provisioned fully unattended on a fresh Mac.

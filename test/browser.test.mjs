@@ -107,7 +107,14 @@ test('setup form preserves unsaved fields across status refresh and saves Unicod
     name.value='';name.dispatchEvent(new Event('input',{bubbles:true}));
     await action('room',{roomName:'',roomEmail:email.value,timeZone:'Europe/Paris'},'roomForm');
     email.focus();await refresh();
-    return {preserved,saved,invalidPreserved:name.value,dirty:dirtyForms.has('roomForm'),paused:state.settings.paused,hash:location.hash};
+    const googleBlocked=document.getElementById('googleNext').disabled;
+    showStep(4);document.getElementById('brandedUrl').value='https://meet.example.com/draft';
+    document.getElementById('brandedUrl').dispatchEvent(new Event('input',{bubbles:true}));await refresh();
+    const draft=document.getElementById('brandedUrl').value;
+    const downloadBlocked=document.getElementById('downloadRedirect').disabled;
+    showStep(5);const finishBlocked=document.getElementById('finishSetup').disabled;
+    const redirect=redirectConfiguration({settings:{dropInEnabled:true,dropInUrl:'https://meet.google.com/abc-defg-hij',setup:{brandedUrl:'https://meet.example.com/studio'}}});
+    return {preserved,saved,invalidPreserved:name.value,dirty:dirtyForms.has('roomForm'),paused:state.settings.paused,hash:location.hash,googleBlocked,draft,downloadBlocked,finishBlocked,redirect};
   })()`);
-  assert.deepEqual(result,{preserved:'Café 🌍',saved:'Café 🌍',invalidPreserved:'',dirty:true,paused:true,hash:''});
+  assert.deepEqual(result,{preserved:'Café 🌍',saved:'Café 🌍',invalidPreserved:'',dirty:true,paused:true,hash:'',googleBlocked:true,draft:'https://meet.example.com/draft',downloadBlocked:true,finishBlocked:true,redirect:{$schema:'https://openapi.vercel.sh/vercel.json',redirects:[{source:'/studio',destination:'https://meet.google.com/abc-defg-hij',permanent:false},{source:'/studio/',destination:'https://meet.google.com/abc-defg-hij',permanent:false}]}});
 });

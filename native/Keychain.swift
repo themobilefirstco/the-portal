@@ -2,12 +2,13 @@ import Foundation
 import Security
 
 // Secrets arrive on stdin, never in process arguments. The caller owns stdout.
-struct Request: Decodable { let operation: String; let service: String; let account: String; let value: String? }
+struct Request: Decodable { let operation: String; let service: String; let account: String; let value: String?; let noPrompt: Bool? }
 func fail(_ message: String) -> Never {
     FileHandle.standardError.write(Data((message + "\n").utf8)); exit(1)
 }
 do {
     let request = try JSONDecoder().decode(Request.self, from: FileHandle.standardInput.readDataToEndOfFile())
+    if request.noPrompt == true { SecKeychainSetUserInteractionAllowed(false) }
     guard request.service.hasPrefix("org.theportal."), request.account.range(of: "^[a-z-]+$", options: .regularExpression) != nil else { fail("Invalid credential identifier") }
     let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
         kSecAttrService as String: request.service, kSecAttrAccount as String: request.account]

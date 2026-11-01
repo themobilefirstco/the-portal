@@ -9,6 +9,14 @@ import {deploy} from './deployment.mjs';
 import {KeychainStore} from './secrets.mjs';
 import {VERSION} from './config.mjs';
 
+const flags = new Set(process.argv.slice(2));
+const allowed = ['--non-interactive', '--no-open', '--skip-tests', '--stop', '--uninstall', '--help'];
+if ([...flags].some(flag => !allowed.includes(flag))) throw new Error('Unknown installer option. Use --help.');
+if (flags.has('--help')) {
+  console.log('Usage: setup.command [--non-interactive] [--no-open] [--skip-tests] [--uninstall|--stop]');
+  console.log('Non-interactive never opens setup. Google consent and macOS permissions still require a human. Uninstall preserves state and credentials.');
+  process.exit(0);
+}
 if (process.platform !== 'darwin') throw new Error('The Portal currently supports macOS only.');
 const source = fileURLToPath(new URL('..', import.meta.url));
 const root = path.join(os.homedir(), 'Library/Application Support/The Portal');
@@ -21,11 +29,18 @@ const stop = async () => {
   if (!loaded()) return;
   if (launch('bootout', `${domain}/${label}`).status !== 0) throw new Error('Could not stop The Portal. Existing installation preserved.');
 };
-if (process.argv.includes('--stop')) {
+if (flags.has('--stop') || flags.has('--uninstall')) {
   await stop(); fs.rmSync(plist, {force: true});
+  if (flags.has('--uninstall')) fs.rmSync(app, {recursive: true, force: true});
   console.log('The Portal stopped. Login startup disabled. Settings and Keychain credentials preserved.'); process.exit(0);
 }
-const unlock = new KeychainStore(state, {helper: path.join(source, 'runtime/portal-keychain')});
+if (!flags.has('--skip-tests')) {
+  for (const script of ['scripts/check.mjs', 'scripts/test.mjs']) {
+    const result = spawnSync(process.execPath, [script], {cwd: source, stdio: 'inherit'});
+    if (result.status !== 0) throw new Error('Pre-install checks failed. Installation unchanged.');
+  }
+}
+const unlock = new KeychainStore(state, {helper: path.join(source, 'runtime/portal-keychain'), noPrompt: flags.has('--non-interactive')});
 const controlKey = unlock.read('control-key');
 if (loaded()) {
   try {
@@ -43,7 +58,7 @@ const doc = `<?xml version="1.0" encoding="UTF-8"?>
 <key>Label</key><string>${label}</string>
 <key>ProgramArguments</key><array><string>${xml(path.join(app,'runtime/node'))}</string><string>${xml(path.join(app,'src/server.mjs'))}</string></array>
 <key>WorkingDirectory</key><string>${xml(app)}</string>
-<key>EnvironmentVariables</key><dict><key>PORTAL_DATA_DIR</key><string>${xml(state)}</string></dict>
+<key>EnvironmentVariables</key><dict><key>PORTAL_DATA_DIR</key><string>${xml(state)}</string>${flags.has('--non-interactive') ? '<key>PORTAL_NON_INTERACTIVE</key><string>1</string>' : ''}</dict>
 <key>RunAtLoad</key><true/><key>KeepAlive</key><true/>
 <key>LimitLoadToSessionType</key><string>Aqua</string><key>ThrottleInterval</key><integer>15</integer>
 <key>StandardOutPath</key><string>${xml(path.join(root,'controller.log'))}</string>
@@ -69,4 +84,4 @@ try {
   throw error;
 }
 console.log(`The Portal ${VERSION} installed. It starts after this Mac user logs in.`);
-await import('./open.mjs');
+if (!flags.has('--no-open') && !flags.has('--non-interactive')) await import('./open.mjs');

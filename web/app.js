@@ -4,7 +4,7 @@ if (params.has('key')) { sessionStorage.setItem('portal-key', params.get('key'))
 const key = sessionStorage.getItem('portal-key');
 let state, busy = false;
 const dirtyForms = new Set();
-for (const id of ['roomForm','dashboardForm','departureForm']) $(id).addEventListener('input', () => dirtyForms.add(id));
+for (const id of ['roomForm','dashboardForm','departureForm','brandForm']) $(id).addEventListener('input', () => dirtyForms.add(id));
 const testWithoutDevices = new Set();
 const time = ms => new Intl.DateTimeFormat('en-US', {hour: 'numeric', minute: '2-digit', timeZone: state?.settings.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone}).format(ms);
 const dateTime = ms => new Intl.DateTimeFormat('en-US', {weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: state?.settings.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone}).format(ms);
@@ -85,12 +85,13 @@ function render(s) {
   $('activity').replaceChildren();
   for (const item of s.activity.slice(0, 6)) { const p = document.createElement('p'); const t = document.createElement('span'); t.textContent = time(item.at); p.append(t, document.createTextNode(item.text)); $('activity').append(p); }
   if (!s.activity.length) { const p = document.createElement('p'); p.className = 'empty'; p.textContent = 'Waiting for your first connection.'; $('activity').append(p); }
+  document.dispatchEvent(new CustomEvent('portal:state', {detail:s}));
 }
 async function action(name, body = {}, form) {
-  if (busy) return;
+  if (busy) return false;
   busy = true;
-  try { const s = await api(name, body); if (form) dirtyForms.delete(form); render(s); $('toast').hidden = true; }
-  catch (e) { toast(e.message, true); }
+  try { const s = await api(name, body); if (form) dirtyForms.delete(form); render(s); $('toast').hidden = true; document.dispatchEvent(new CustomEvent('portal:action', {detail:{name}})); return true; }
+  catch (e) { toast(e.message, true); return false; }
   finally { busy = false; }
 }
 $('roomForm').onsubmit = event => { event.preventDefault(); action('room', {roomName: $('roomName').value, roomEmail: $('roomEmail').value, timeZone: $('timeZone').value}, 'roomForm'); };
@@ -126,7 +127,7 @@ $('dropInForm').onsubmit = async event => {
   busy = true;
   try {
     const result = await api('drop-in', {url: $('dropInUrl').value.trim(), enabled: $('dropInEnabled').checked, accessConfirmed: $('dropInAccess').checked});
-    dropInDirty = false; $('dropInAccess').checked = false; render(result); $('toast').hidden = true;
+    dropInDirty = false; $('dropInAccess').checked = false; render(result); $('toast').hidden = true; document.dispatchEvent(new CustomEvent('portal:action', {detail:{name:'drop-in'}}));
   } catch (e) { toast(e.message, true); }
   finally { busy = false; }
 };

@@ -32,6 +32,13 @@ test('local API protects credentials, rejects cross-site writes, and persists pa
   const reboundStatus=await new Promise((resolve,reject)=>{const r=http.get(`${base}/api/status`,{headers:{...headers,Host:'evil.example'}},res=>{res.resume();resolve(res.statusCode);});r.on('error',reject);});
   assert.equal(reboundStatus,403);
   assert.equal((await fetch(`${base}/api/connect`,{method:'POST',headers,body:'{}'})).status,400);
+  const setupRequest=body=>fetch(`${base}/api/setup`,{method:'POST',headers,body:JSON.stringify(body)});
+  assert.equal((await setupRequest({devicesConfirmed:true})).status,400);
+  assert.equal((await setupRequest({brandedUrl:'https://meet.example.com/miami'})).status,400);
+  assert.equal((await setupRequest({completed:true})).status,400);
+  assert.equal((await fetch(`${base}/api/setup/finish`,{method:'POST',headers,body:'{"visitConfirmed":true}'})).status,400);
+  assert.equal((await (await fetch(`${base}/api/status`,{headers})).json()).settings.paused,true);
+  assert.equal((await fetch(`${base}/setup.js`)).status,200);
   const attack=await fetch(`${base}/api/settings`,{method:'POST',headers:{...headers,Origin:'https://evil.example'},body:'{"paused":true}'});assert.equal(attack.status,403);
   const response=await fetch(`${base}/api/settings`,{method:'POST',headers,body:'{"paused":true}'});const s=await response.json();assert.equal(response.status,200,JSON.stringify(s));assert.equal(s.settings.paused,true);assert.equal(s.camera,'on');assert.equal(s.microphone,'on');
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'settings.json'),'utf8')).paused,true);

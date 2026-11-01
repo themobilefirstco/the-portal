@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "The Portal local configuration",
+  "description": "No secrets or human verification flags. Runtime validation is performed by the same local API used by the GUI.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "room": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "roomName",
+        "roomEmail",
+        "timeZone"
+      ],
+      "properties": {
+        "roomName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "roomEmail": {
+          "type": "string",
+          "maxLength": 254
+        },
+        "timeZone": {
+          "type": "string"
+        }
+      }
+    },
+    "googleClientFile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dropIn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "url"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "url": {
+          "type": "string"
+        },
+        "accessConfirmed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "brandedUrl": {
+      "type": "string"
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "paused": {
+          "type": "boolean"
+        },
+        "dashboard": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "aloneLeaveSeconds": {
+          "type": "integer",
+          "enum": [
+            0,
+            30,
+            60,
+            120
+          ]
+        }
+      }
+    }
+  }
+}
