@@ -11,7 +11,7 @@ func externalURL(_ url: URL) -> Bool {
     url.scheme == "https" && url.host != nil && url.user == nil && url.password == nil
 }
 
-final class PortalApp: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate {
+final class PortalApp: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, NSToolbarDelegate, NSMenuDelegate {
     var window: NSWindow!
     var web: WKWebView!
     var child: Process?
@@ -24,7 +24,10 @@ final class PortalApp: NSObject, NSApplicationDelegate, WKNavigationDelegate, WK
     var controller: URL { Bundle.main.resourceURL!.appendingPathComponent("controller") }
     var origin: URL { URL(string: "http://127.0.0.1:\(port)")! }
     var testMode = false
+    var smokeSizeIndex = 0
     var statusLabel: NSTextField!
+    var loadingView: NSVisualEffectView!
+    var spinner: NSProgressIndicator!
     var environment: [String:String] {
         var env = [String:String]()
         for key in ["HOME", "USER", "LOGNAME", "TMPDIR", "PATH", "LANG"] { env[key] = ProcessInfo.processInfo.environment[key] }
@@ -44,27 +47,84 @@ final class PortalApp: NSObject, NSApplicationDelegate, WKNavigationDelegate, WK
         }
         #endif
         buildMenus()
-        window = NSWindow(contentRect: NSRect(x:0,y:0,width:1120,height:860), styleMask:[.titled,.closable,.miniaturizable,.resizable], backing:.buffered, defer:false)
+        window = NSWindow(contentRect: NSRect(x:0,y:0,width:680,height:740), styleMask:[.titled,.closable,.miniaturizable,.resizable,.fullSizeContentView], backing:.buffered, defer:false)
         window.title = testMode ? "The Portal — isolated test" : "The Portal"
-        window.minSize = NSSize(width:720,height:650)
+        window.minSize = NSSize(width:520,height:560)
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.toolbarStyle = .unified
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        let toolbar=NSToolbar(identifier:"PortalToolbar"); toolbar.delegate=self; toolbar.displayMode = .iconOnly
+        window.toolbar=toolbar
+        window.titlebarSeparatorStyle = .none
         window.isReleasedWhenClosed = false
         window.center()
+        let glass=NSVisualEffectView(frame:window.contentView!.bounds)
+        glass.material = .underWindowBackground; glass.blendingMode = .behindWindow; glass.state = .active
+        glass.autoresizingMask = [.width,.height]; window.contentView!.addSubview(glass)
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         configuration.userContentController.addUserScript(WKUserScript(source:"window.portalNativeHost = true;",injectionTime:.atDocumentStart,forMainFrameOnly:true))
+        configuration.userContentController.addUserScript(WKUserScript(source:"document.documentElement.classList.add('native-host');",injectionTime:.atDocumentEnd,forMainFrameOnly:true))
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
-        web = WKWebView(frame:window.contentView!.bounds,configuration:configuration)
-        web.autoresizingMask = [.width,.height]
+        web = WKWebView(frame:.zero,configuration:configuration)
+        web.translatesAutoresizingMaskIntoConstraints=false; web.underPageBackgroundColor = .clear
         web.navigationDelegate = self; web.uiDelegate = self
         window.contentView!.addSubview(web)
-        statusLabel = NSTextField(wrappingLabelWithString:"Starting your room…")
-        statusLabel.alignment = .center; statusLabel.font = .systemFont(ofSize:17)
-        statusLabel.frame = NSRect(x:80,y:350,width:960,height:120)
-        statusLabel.autoresizingMask = [.width,.minYMargin,.maxYMargin]
-        window.contentView!.addSubview(statusLabel)
+        NSLayoutConstraint.activate([
+            web.leadingAnchor.constraint(equalTo:window.contentView!.leadingAnchor),
+            web.trailingAnchor.constraint(equalTo:window.contentView!.trailingAnchor),
+            web.topAnchor.constraint(equalTo:(window.contentLayoutGuide as! NSLayoutGuide).topAnchor),
+            web.bottomAnchor.constraint(equalTo:window.contentView!.bottomAnchor)
+        ])
+        loadingView=NSVisualEffectView(frame:.zero); loadingView.material = .hudWindow
+        loadingView.blendingMode = .withinWindow; loadingView.state = .active
+        loadingView.translatesAutoresizingMaskIntoConstraints=false
+        window.contentView!.addSubview(loadingView)
+        NSLayoutConstraint.activate([
+            loadingView.leadingAnchor.constraint(equalTo:web.leadingAnchor),loadingView.trailingAnchor.constraint(equalTo:web.trailingAnchor),
+            loadingView.topAnchor.constraint(equalTo:web.topAnchor),loadingView.bottomAnchor.constraint(equalTo:web.bottomAnchor)
+        ])
+        statusLabel = NSTextField(wrappingLabelWithString:"Opening your room…")
+        statusLabel.alignment = .center; statusLabel.font = .systemFont(ofSize:15,weight:.medium)
+        statusLabel.textColor = .secondaryLabelColor; statusLabel.translatesAutoresizingMaskIntoConstraints=false
+        spinner=NSProgressIndicator(); spinner.style = .spinning; spinner.controlSize = .small
+        spinner.startAnimation(nil); spinner.translatesAutoresizingMaskIntoConstraints=false
+        loadingView.addSubview(statusLabel); loadingView.addSubview(spinner)
+        NSLayoutConstraint.activate([
+            statusLabel.centerXAnchor.constraint(equalTo:loadingView.centerXAnchor),statusLabel.centerYAnchor.constraint(equalTo:loadingView.centerYAnchor,constant:14),
+            statusLabel.widthAnchor.constraint(lessThanOrEqualTo:loadingView.widthAnchor,constant:-80),
+            spinner.centerXAnchor.constraint(equalTo:loadingView.centerXAnchor),spinner.bottomAnchor.constraint(equalTo:statusLabel.topAnchor,constant:-18)
+        ])
         showWindow()
         Task { await startController() }
     }
+    func toolbarAllowedItemIdentifiers(_ toolbar:NSToolbar) -> [NSToolbarItem.Identifier] { [.flexibleSpace,NSToolbarItem.Identifier("PortalTitle"),NSToolbarItem.Identifier("PortalActions")] }
+    func toolbarDefaultItemIdentifiers(_ toolbar:NSToolbar) -> [NSToolbarItem.Identifier] { [NSToolbarItem.Identifier("PortalTitle"),.flexibleSpace,NSToolbarItem.Identifier("PortalActions")] }
+    func toolbar(_ toolbar:NSToolbar,itemForItemIdentifier identifier:NSToolbarItem.Identifier,willBeInsertedIntoToolbar:Bool) -> NSToolbarItem? {
+        let item=NSToolbarItem(itemIdentifier:identifier)
+        if identifier.rawValue == "PortalTitle" {
+            let title=NSTextField(labelWithString:"The Portal"); title.font = .systemFont(ofSize:13,weight:.semibold); item.view=title
+        } else if identifier.rawValue == "PortalActions" {
+            let menu=NSMenu(); menu.delegate=self
+            let icon=NSMenuItem(title:"Room actions",action:nil,keyEquivalent:""); icon.image=NSImage(systemSymbolName:"ellipsis.circle",accessibilityDescription:"Room actions"); menu.addItem(icon)
+            for (title,action) in [("Room overview",#selector(openOverview)),("Room setup",#selector(openSetup)),("Open at Login",#selector(toggleLogin)),("Get Google Chrome…",#selector(getChrome)),("Setup guide…",#selector(guide))] {
+                let entry=menu.addItem(withTitle:title,action:action,keyEquivalent:""); entry.target=self
+            }
+            menu.addItem(.separator()); menu.addItem(withTitle:"Quit The Portal…",action:#selector(NSApplication.terminate(_:)),keyEquivalent:"")
+            let button=NSPopUpButton(frame:NSRect(x:0,y:0,width:38,height:28),pullsDown:true)
+            button.bezelStyle = .texturedRounded; button.menu=menu; button.imagePosition = .imageOnly
+            button.setAccessibilityLabel("Room actions"); button.toolTip="Room actions"
+            item.view=button; item.label="Room actions"
+        } else { return nil }
+        return item
+    }
+    func menuWillOpen(_ menu:NSMenu) {
+        for item in menu.items where item.action == #selector(toggleLogin) { item.state=SMAppService.mainApp.status == .enabled ? .on : .off }
+    }
+    @objc func openOverview() { guard ready else { return }; showWindow(); web.evaluateJavaScript("showOverview()",completionHandler:nil) }
+    @objc func openSetup() { guard ready else { return }; showWindow(); web.evaluateJavaScript("showStep(0)",completionHandler:nil) }
     func buildMenus() {
         let main = NSMenu(); let appRoot = NSMenuItem(); main.addItem(appRoot)
         let appMenu = NSMenu(); appRoot.submenu = appMenu
@@ -102,7 +162,7 @@ final class PortalApp: NSObject, NSApplicationDelegate, WKNavigationDelegate, WK
         loginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
     }
     func alert(_ message: String) { let a=NSAlert(); a.messageText="The Portal"; a.informativeText=message; a.runModal() }
-    func fail(_ message: String) { statusLabel.stringValue=message; statusLabel.isHidden=false; web.isHidden=true }
+    func fail(_ message: String) { statusLabel.stringValue=message; loadingView.isHidden=false; spinner.stopAnimation(nil); web.isHidden=true }
     func probe() async -> [String:Any]? {
         var request=URLRequest(url:origin.appendingPathComponent("health")); request.timeoutInterval=1
         guard let (data,response)=try? await URLSession.shared.data(for:request) else { return nil }
@@ -130,7 +190,7 @@ final class PortalApp: NSObject, NSApplicationDelegate, WKNavigationDelegate, WK
                     guard p.isRunning else { return }
                     var components=URLComponents(url:origin,resolvingAgainstBaseURL:false)!
                     components.fragment="key=\(token)"
-                    statusLabel.isHidden=true; web.isHidden=false; ready=true
+                    web.isHidden=false; ready=true
                     web.load(URLRequest(url:components.url!))
                     return
                 }
@@ -195,14 +255,27 @@ final class PortalApp: NSObject, NSApplicationDelegate, WKNavigationDelegate, WK
         panel.beginSheetModal(for:window){ result in completionHandler(result == .OK ? panel.url : nil) }
     }
     func webView(_ webView:WKWebView,didFinish navigation:WKNavigation!) {
+        if let url=webView.url, localURL(url,port:port), ready {
+            spinner.stopAnimation(nil)
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.2
+                loadingView.animator().alphaValue=0
+            },completionHandler:{ self.loadingView.isHidden=true; self.loadingView.alphaValue=1 })
+        }
         #if PORTAL_TESTING
         if testMode && ProcessInfo.processInfo.environment["PORTAL_APP_SMOKE_TEST"] == "1" { smokeCheck(remaining:30) }
         #endif
     }
     #if PORTAL_TESTING
     func smokeCheck(remaining:Int) {
-        web.evaluateJavaScript("typeof state !== 'undefined' && Boolean(state?.health) && document.querySelector('#roomName') !== null && document.querySelector('#googleNext').disabled") { result,error in
-            if result as? Bool == true && error == nil { print("PORTAL_NATIVE_SMOKE_OK"); NSApp.terminate(nil) }
+        web.evaluateJavaScript("typeof state !== 'undefined' && Boolean(state?.health) && document.querySelector('#roomName') !== null && document.querySelector('#googleNext').disabled && document.documentElement.classList.contains('native-host') && document.documentElement.scrollWidth <= innerWidth") { result,error in
+            if result as? Bool == true && error == nil {
+                let sizes=[NSSize(width:520,height:560),NSSize(width:1000,height:800)]
+                if self.smokeSizeIndex < sizes.count {
+                    self.window.setContentSize(sizes[self.smokeSizeIndex]); self.smokeSizeIndex += 1
+                    DispatchQueue.main.asyncAfter(deadline:.now()+0.3) { self.smokeCheck(remaining:30) }
+                } else { print("PORTAL_NATIVE_SMOKE_OK"); NSApp.terminate(nil) }
+            }
             else if remaining > 0 { DispatchQueue.main.asyncAfter(deadline:.now()+0.2) { self.smokeCheck(remaining:remaining-1) } }
             else { print("PORTAL_NATIVE_SMOKE_FAILED"); NSApp.terminate(nil) }
         }

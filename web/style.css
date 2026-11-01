@@ -9,3 +9,43 @@
 .display{height:100vh;background:#183b34;color:#ecf4e4;display:flex;flex-direction:column;overflow:hidden}.display-brand{padding:45px 5%;font-size:19px;letter-spacing:4px;font-weight:650;display:flex;justify-content:space-between}.display-brand span{font-size:12px;letter-spacing:3px;color:#a5bba9}.display-main{padding:5%;width:100%;flex:1;display:flex;justify-content:center;flex-direction:column}.display-main .eyebrow{color:#b7cda7;font-size:18px;letter-spacing:4px}.display-main h1{font-size:clamp(90px,16vw,290px);letter-spacing:-10px;color:#dcefaa;line-height:1.15;font-weight:450}.display-caption{font-size:24px;color:#adbfab}.display-footer{padding:35px 5%;display:flex;justify-content:space-between;font-size:15px;letter-spacing:.5px;border-top:1px solid #35584b}.display-footer span:first-child:before{content:'●';color:#def19f;margin-right:14px;font-size:11px}
 /* Reading sizes stay comfortable; tiny engraving is restricted to decorative labels. */
 .portal-app .lede{font-size:14px;line-height:1.6}.portal-app .form-card label,.portal-app .field-label{font-size:12px}.portal-app input:not([type=range]):not([type=checkbox]),.portal-app select{font-size:14px}.portal-app .field-help,.portal-app .form-card small,.portal-app .guide-step p{font-size:12px}.portal-app .step-link>span:nth-child(2){font-size:9px;letter-spacing:.3px}.portal-app button:not(.step-link):not(.workspace-button):not(.text-button){font-size:13px}
+
+/* Native window: the Mac toolbar owns the title and app actions. */
+.native-host, .native-host body { height:100%; background:transparent; }
+.native-host .portal-app { padding:10px 12px 12px; overflow:hidden; }
+.native-host .desktop-frame { max-width:none; height:100%; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+.native-host .window-titlebar, .native-host .sidebar-label, .native-host .sidebar-bottom,
+.native-host .perforated-speaker, .native-host .speaker-label, .native-host .workspace-button,
+.native-host .hardware-base { display:none; }
+.native-host .app-shell { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:48px minmax(0,1fr); gap:10px; height:100%; }
+.native-host .sidebar, .native-host .right-controls { display:contents; }
+.native-host .sidebar .step-nav { grid-column:1; grid-row:1; }
+.native-host .right-controls .step-nav { grid-column:2; grid-row:1; }
+.native-host .step-nav { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+.native-host .step-link { min-height:0; height:46px; flex-direction:row; gap:7px; padding:6px; background:linear-gradient(#f4f2e8,#e3e3d8); }
+.native-host .step-link.selected { background:linear-gradient(#d9e6ce,#c2d6b9); }
+.native-host .step-link .step-num { font-size:11px; }
+.native-host .step-link>span:nth-child(2) { font-size:9px; letter-spacing:0; }
+.native-host .step-check { display:none; }
+.native-host .app-main { grid-row:2; grid-column:1/-1; display:flex; flex-direction:column; min-height:0; border-width:5px; border-radius:18px; }
+.native-host .topbar { flex:0 0 38px; padding:0 23px; }
+.native-host main { height:auto; min-height:0; flex:1; overflow:auto; padding:22px 24px 0; }
+.native-host .setup-topline { margin-bottom:14px; }
+.native-host .wizard-step h1 { font-size:25px; letter-spacing:-.8px; }
+.native-host .lede { font-size:13px; margin-bottom:22px; }
+.native-host .form-card { padding:0; }
+.native-host .form-card label { margin-top:16px; }
+.native-host input:not([type=range]):not([type=checkbox]), .native-host select { min-height:38px; padding:8px 11px; font-size:13px; }
+.native-host .field-help { font-size:11px; line-height:1.5; margin-bottom:16px; }
+.native-host .form-footer { margin-top:21px; padding-top:18px; }
+.native-host footer { min-height:42px; margin-top:20px; }
+@media(max-width:560px) {
+ .native-host .portal-app { padding:8px; }
+ .native-host .app-shell { gap:8px; }
+ .native-host .step-nav { gap:5px; }
+ .native-host .step-link { flex-direction:column; gap:1px; padding:4px 2px; }
+ .native-host .step-link>span:nth-child(2) { font-size:8px; }
+ .native-host main { padding:18px 18px 0; }
+ .native-host .topbar { padding:0 18px; }
+ .native-host .saved-note, .native-host .breadcrumb, .native-host .crumb-divider { display:none; }
+}

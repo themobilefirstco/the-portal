@@ -9,6 +9,8 @@ The downloadable **0.2.0 unsigned preview** is a native macOS application contai
 5. Grant Google consent in your system browser, sign into the dedicated room Chrome profile, approve camera/microphone permissions and test two-way media with another person. The native wrapper does not remove Google's requirement to create your own Desktop OAuth client. Follow the [human checklist](human-only-checklist.md).
 6. Optionally enable **The Portal → Open at Login**. macOS may require approval in System Settings → General → Login Items. This starts after user login, not before FileVault unlock.
 
+The app opens in a compact 680 × 740 window and resizes down to 520 × 560. Real macOS traffic-light controls and a Room actions menu share its translucent toolbar. The loading view uses macOS glass material and respects Reduce Motion. Setup steps adapt to the available width and long forms scroll inside the display.
+
 Closing the window keeps the room running. Reopen it from the Dock or menu bar. **Quit The Portal** confirms before stopping its controller and closing the room Chrome session, including an active meeting. Do not quit during a call unless you intend to end it. If the native app crashes, its controller detects the missing parent and stops the room browser.
 
 ## Existing source installations
